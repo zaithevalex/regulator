@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package controller;
+option go_package = "./proto";
+
+message Payload {
+  repeated bytes content = 1;
+}
+
+message Queue {
+  repeated bytes content = 1;
+}
+
+message Packet {
+  Queue queue = 1;
+  bytes content = 2;
+}
+
+service PayloadService {
+  rpc Store(Packet) returns (Queue) {}
+  rpc Pop(Queue) returns(Payload) {}
+}
