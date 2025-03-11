@@ -5,7 +5,6 @@ import (
 	"controller/lib"
 	db "controller/proto"
 	"controller/server"
-	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
@@ -57,7 +56,6 @@ func (s *ControllerServer) StoreToController(_ context.Context, _ *emptypb.Empty
 	if e := queue.First(); e != nil {
 		if e.Time.UnixMilli() < time.Now().UnixMilli() {
 			controller.Input <- queue.Pop()
-			fmt.Println("Channel length:", len(controller.Input), cap(controller.Input))
 		}
 	}
 
