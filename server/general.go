@@ -2,6 +2,7 @@ package server
 
 import (
 	"math/rand"
+	"slices"
 	"time"
 )
 
@@ -20,7 +21,6 @@ type (
 
 	Controller struct {
 		Buffer    []*EventBlock
-		Length    int
 		Capacity  int
 		StartTime time.Time
 	}
@@ -37,13 +37,20 @@ func generateEventBlock(start, end time.Time) *EventBlock {
 		})
 	}
 
+	slices.SortFunc(eventBlock, func(a, b *Event) int {
+		if a.Time.UnixMilli() > b.Time.UnixMilli() {
+			return 1
+		} else if a.Time.UnixMilli() < b.Time.UnixMilli() {
+			return -1
+		} else {
+			return 0
+		}
+	})
 	return &eventBlock
 }
 
 func (c *Controller) Push(delta time.Duration) {
 	end := c.StartTime.Add(delta)
-
-	c.Buffer = append(c.Buffer, generateEventBlock(c.StartTime, c.StartTime.Add(delta)))
-	c.Length++
+	c.Buffer = append(c.Buffer, generateEventBlock(c.StartTime, end))
 	c.StartTime = end
 }

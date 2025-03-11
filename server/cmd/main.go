@@ -4,7 +4,6 @@ import (
 	"context"
 	db "controller/proto"
 	"controller/server"
-	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
@@ -13,24 +12,16 @@ import (
 
 var startTime time.Time
 var controller server.Controller
+var timeInterval, timeShift time.Duration
 
 type ControllerServer struct {
 	db.PayloadServiceServer
 }
 
 func init() {
-	startTime = time.Date(
-		2025,
-		1,
-		1,
-		0,
-		0,
-		0,
-		0,
-		time.UTC)
-
+	timeInterval, timeShift = 10*time.Second, 5*time.Second
+	startTime = time.Now().Add(timeInterval)
 	controller = server.Controller{
-		Length:    1,
 		Capacity:  server.Capacity,
 		StartTime: startTime,
 	}
@@ -52,8 +43,9 @@ func main() {
 }
 
 func (s *ControllerServer) Store(_ context.Context, _ *emptypb.Empty) (*db.Queue, error) {
-	controller.Push(5 * time.Second)
-	time.Sleep(5 * time.Second)
-	fmt.Println(controller.Length, controller.StartTime)
+	if controller.StartTime.UnixMilli() < time.Now().Add(timeShift).UnixMilli() {
+		controller.Push(timeInterval)
+	}
+
 	return nil, nil
 }
