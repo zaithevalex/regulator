@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	general "controller/client"
 	db "controller/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func main() {
@@ -17,10 +17,9 @@ func main() {
 	}
 	defer con.Close()
 
-	q := &db.Queue{}
-	client := db.NewPayloadServiceClient(con)
-	q, err = client.Store(ctx, &db.Packet{Queue: q, Content: general.GeneratePayload()})
-	if err != nil {
-		panic(err)
+	//q := &db.Queue{}
+	for {
+		client := db.NewPayloadServiceClient(con)
+		_, _ = client.Store(ctx, &emptypb.Empty{})
 	}
 }

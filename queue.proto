@@ -3,6 +3,8 @@ syntax = "proto3";
 package controller;
 option go_package = "./proto";
 
+import "google/protobuf/empty.proto";
+
 message Payload {
   repeated bytes content = 1;
 }
@@ -17,6 +19,5 @@ message Packet {
 }
 
 service PayloadService {
-  rpc Store(Packet) returns (Queue) {}
-  rpc Pop(Queue) returns(Payload) {}
+  rpc Store(google.protobuf.Empty) returns (Queue) {}
 }

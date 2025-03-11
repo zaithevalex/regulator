@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -20,15 +21,13 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	PayloadService_Store_FullMethodName = "/controller.PayloadService/Store"
-	PayloadService_Pop_FullMethodName   = "/controller.PayloadService/Pop"
 )
 
 // PayloadServiceClient is the client API for PayloadService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PayloadServiceClient interface {
-	Store(ctx context.Context, in *Packet, opts ...grpc.CallOption) (*Queue, error)
-	Pop(ctx context.Context, in *Queue, opts ...grpc.CallOption) (*Payload, error)
+	Store(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Queue, error)
 }
 
 type payloadServiceClient struct {
@@ -39,20 +38,10 @@ func NewPayloadServiceClient(cc grpc.ClientConnInterface) PayloadServiceClient {
 	return &payloadServiceClient{cc}
 }
 
-func (c *payloadServiceClient) Store(ctx context.Context, in *Packet, opts ...grpc.CallOption) (*Queue, error) {
+func (c *payloadServiceClient) Store(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Queue, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Queue)
 	err := c.cc.Invoke(ctx, PayloadService_Store_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *payloadServiceClient) Pop(ctx context.Context, in *Queue, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, PayloadService_Pop_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +52,7 @@ func (c *payloadServiceClient) Pop(ctx context.Context, in *Queue, opts ...grpc.
 // All implementations must embed UnimplementedPayloadServiceServer
 // for forward compatibility.
 type PayloadServiceServer interface {
-	Store(context.Context, *Packet) (*Queue, error)
-	Pop(context.Context, *Queue) (*Payload, error)
+	Store(context.Context, *emptypb.Empty) (*Queue, error)
 	mustEmbedUnimplementedPayloadServiceServer()
 }
 
@@ -75,11 +63,8 @@ type PayloadServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPayloadServiceServer struct{}
 
-func (UnimplementedPayloadServiceServer) Store(context.Context, *Packet) (*Queue, error) {
+func (UnimplementedPayloadServiceServer) Store(context.Context, *emptypb.Empty) (*Queue, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Store not implemented")
-}
-func (UnimplementedPayloadServiceServer) Pop(context.Context, *Queue) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Pop not implemented")
 }
 func (UnimplementedPayloadServiceServer) mustEmbedUnimplementedPayloadServiceServer() {}
 func (UnimplementedPayloadServiceServer) testEmbeddedByValue()                        {}
@@ -103,7 +88,7 @@ func RegisterPayloadServiceServer(s grpc.ServiceRegistrar, srv PayloadServiceSer
 }
 
 func _PayloadService_Store_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Packet)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -115,25 +100,7 @@ func _PayloadService_Store_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: PayloadService_Store_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PayloadServiceServer).Store(ctx, req.(*Packet))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _PayloadService_Pop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Queue)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PayloadServiceServer).Pop(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PayloadService_Pop_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PayloadServiceServer).Pop(ctx, req.(*Queue))
+		return srv.(PayloadServiceServer).Store(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -148,10 +115,6 @@ var PayloadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Store",
 			Handler:    _PayloadService_Store_Handler,
-		},
-		{
-			MethodName: "Pop",
-			Handler:    _PayloadService_Pop_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
