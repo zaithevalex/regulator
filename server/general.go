@@ -40,8 +40,10 @@ func generateEventBlock(start, end time.Time) *EventBlock {
 	return &eventBlock
 }
 
-func (c *Controller) Push(end time.Time) {
-	c.Buffer = append(c.Buffer, generateEventBlock(c.StartTime, end))
+func (c *Controller) Push(delta time.Duration) {
+	end := c.StartTime.Add(delta)
+
+	c.Buffer = append(c.Buffer, generateEventBlock(c.StartTime, c.StartTime.Add(delta)))
 	c.Length++
 	c.StartTime = end
 }

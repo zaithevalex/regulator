@@ -4,6 +4,7 @@ import (
 	"context"
 	db "controller/proto"
 	"controller/server"
+	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
@@ -51,6 +52,8 @@ func main() {
 }
 
 func (s *ControllerServer) Store(_ context.Context, _ *emptypb.Empty) (*db.Queue, error) {
-	controller.Push(startTime.Add())
+	controller.Push(5 * time.Second)
+	time.Sleep(5 * time.Second)
+	fmt.Println(controller.Length, controller.StartTime)
 	return nil, nil
 }
