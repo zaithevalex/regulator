@@ -2,44 +2,41 @@ package server
 
 import (
 	"math/rand"
+	"slices"
 	"time"
 )
 
 const (
 	Capacity           = 50
 	maxGeneratedEvents = 10
-	minRandomLength    = 46
-	maxRandomLength    = 1500
 )
 
 type (
 	Event struct {
-		content [][]byte
+		Content byte
 		Time    time.Time
 	}
 
-	Controller struct {
-		Buffer   []*Event
-		Length   int
-		Capacity int
-	}
+	EventBlock []*Event
 )
 
-func GeneratePayload(amount int) [][]byte {
-	eventsAmount := rand.Intn(amount) + 1
-
-	var payloadList [][]byte
-	for range eventsAmount {
-		payloadList = append(payloadList, make([]byte, rand.Intn(maxRandomLength-minRandomLength+1)+minRandomLength))
+func GenerateEventBlock(start, end time.Time) *EventBlock {
+	eventBlock := EventBlock{}
+	for range rand.Intn(maxGeneratedEvents) {
+		eventBlock = append(eventBlock, &Event{
+			Content: byte(rand.Intn(128)),
+			Time:    time.UnixMilli(rand.Int63n(end.UnixMilli()-start.UnixMilli()) + start.UnixMilli()),
+		})
 	}
 
-	return payloadList
-}
-
-func (c *Controller) GenerateTimes(duration time.Duration) {
-	payload := GeneratePayload(maxGeneratedEvents)
-
-	c.Buffer = append(c.Buffer, &Event{content: payload})
-	c.Buffer[len(c.Buffer)-1].Time = c.Buffer[len(c.Buffer)-2].Time.Add(duration)
-	c.Length += len(c.Buffer[len(c.Buffer)-1].content)
+	slices.SortFunc(eventBlock, func(a, b *Event) int {
+		if a.Time.UnixMilli() > b.Time.UnixMilli() {
+			return 1
+		} else if a.Time.UnixMilli() < b.Time.UnixMilli() {
+			return -1
+		} else {
+			return 0
+		}
+	})
+	return &eventBlock
 }

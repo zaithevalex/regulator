@@ -2,38 +2,38 @@ package main
 
 import (
 	"context"
+	"controller/lib"
 	db "controller/proto"
 	"controller/server"
-	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
 	"time"
 )
 
-var controller server.Controller
+var (
+	startTime               time.Time
+	timeInterval, timeShift time.Duration
+
+	queue      lib.Queue
+	controller lib.Controller
+)
 
 type ControllerServer struct {
-	db.PayloadServiceServer
+	db.ControllerServiceServer
 }
 
 func init() {
-	controller = server.Controller{
-		Buffer: []*server.Event{
-			{
-				Time: time.Date(
-					2025,
-					1,
-					1,
-					0,
-					0,
-					0,
-					0,
-					time.UTC),
-			},
-		},
-		Length:   1,
-		Capacity: server.Capacity,
+	timeInterval, timeShift = 10*time.Second, 5*time.Second
+	startTime = time.Now().Add(timeInterval)
+
+	queue = lib.Queue{
+		StartTime: startTime,
+	}
+
+	controller = lib.Controller{
+		Input:  make(chan *server.Event, server.Capacity),
+		Output: make(chan *server.Event),
 	}
 }
 
@@ -44,7 +44,7 @@ func main() {
 	}
 
 	server := grpc.NewServer()
-	db.RegisterPayloadServiceServer(server, &ControllerServer{})
+	db.RegisterControllerServiceServer(server, &ControllerServer{})
 
 	err = server.Serve(lis)
 	if err != nil {
@@ -52,12 +52,16 @@ func main() {
 	}
 }
 
-func (s *ControllerServer) Store(_ context.Context, _ *emptypb.Empty) (*db.Queue, error) {
-	go func() {
-		controller.GenerateTimes(5 * time.Second)
-	}()
-	time.Sleep(5 * time.Second)
-	fmt.Println("Length:", controller.Length, "Capacity:", controller.Capacity, "Buffer:", controller.Buffer[len(controller.Buffer)-1].Time)
+func (s *ControllerServer) StoreToController(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	if e := queue.First(); e != nil {
+		if e.Time.UnixMilli() < time.Now().UnixMilli() {
+			controller.Input <- queue.Pop()
+		}
+	}
+
+	if queue.StartTime.UnixMilli() < time.Now().Add(timeShift).UnixMilli() {
+		queue.Push(timeInterval)
+	}
 
 	return nil, nil
 }
