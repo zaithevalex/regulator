@@ -21,6 +21,7 @@ type ControllerServer struct {
 func init() {
 	timeInterval, timeShift = 10*time.Second, 5*time.Second
 	startTime = time.Now().Add(timeInterval)
+
 	controller = server.Controller{
 		Capacity:  server.Capacity,
 		StartTime: startTime,

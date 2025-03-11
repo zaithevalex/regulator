@@ -58,6 +58,23 @@ func (c Controller) Length() int {
 	return l
 }
 
+func (c *Controller) Pop() *Event {
+	if len(c.Buffer) == 0 {
+		return nil
+	}
+
+	event := &Event{}
+	if len(*c.Buffer[0]) != 0 {
+		event = (*c.Buffer[0])[0]
+		*c.Buffer[0] = (*c.Buffer[0])[1:]
+	} else {
+		c.Buffer = c.Buffer[1:]
+		c.Pop()
+	}
+
+	return event
+}
+
 func (c *Controller) Push(delta time.Duration) {
 	end := c.StartTime.Add(delta)
 	c.Buffer = append(c.Buffer, generateEventBlock(c.StartTime, end))
