@@ -17,7 +17,6 @@ func main() {
 	}
 	defer con.Close()
 
-	//q := &db.Queue{}
 	for {
 		client := db.NewPayloadServiceClient(con)
 		_, _ = client.Store(ctx, &emptypb.Empty{})

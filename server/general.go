@@ -49,6 +49,15 @@ func generateEventBlock(start, end time.Time) *EventBlock {
 	return &eventBlock
 }
 
+func (c Controller) Length() int {
+	l := 0
+	for _, event := range c.Buffer {
+		l += len(*event)
+	}
+
+	return l
+}
+
 func (c *Controller) Push(delta time.Duration) {
 	end := c.StartTime.Add(delta)
 	c.Buffer = append(c.Buffer, generateEventBlock(c.StartTime, end))
