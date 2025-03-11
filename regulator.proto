@@ -5,6 +5,6 @@ option go_package = "./proto";
 
 import "google/protobuf/empty.proto";
 
-service RegulatorService {
+service ControllerService {
   rpc StoreToController(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }

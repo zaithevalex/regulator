@@ -18,7 +18,7 @@ func main() {
 	defer con.Close()
 
 	for {
-		client := db.NewRegulatorServiceClient(con)
+		client := db.NewControllerServiceClient(con)
 		_, _ = client.StoreToController(ctx, &emptypb.Empty{})
 	}
 }

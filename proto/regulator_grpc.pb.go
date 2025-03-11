@@ -20,101 +20,101 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RegulatorService_StoreToController_FullMethodName = "/controller.RegulatorService/StoreToController"
+	ControllerService_StoreToController_FullMethodName = "/controller.ControllerService/StoreToController"
 )
 
-// RegulatorServiceClient is the client API for RegulatorService service.
+// ControllerServiceClient is the client API for ControllerService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RegulatorServiceClient interface {
+type ControllerServiceClient interface {
 	StoreToController(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type regulatorServiceClient struct {
+type controllerServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRegulatorServiceClient(cc grpc.ClientConnInterface) RegulatorServiceClient {
-	return &regulatorServiceClient{cc}
+func NewControllerServiceClient(cc grpc.ClientConnInterface) ControllerServiceClient {
+	return &controllerServiceClient{cc}
 }
 
-func (c *regulatorServiceClient) StoreToController(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *controllerServiceClient) StoreToController(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, RegulatorService_StoreToController_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, ControllerService_StoreToController_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// RegulatorServiceServer is the server API for RegulatorService service.
-// All implementations must embed UnimplementedRegulatorServiceServer
+// ControllerServiceServer is the server API for ControllerService service.
+// All implementations must embed UnimplementedControllerServiceServer
 // for forward compatibility.
-type RegulatorServiceServer interface {
+type ControllerServiceServer interface {
 	StoreToController(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
-	mustEmbedUnimplementedRegulatorServiceServer()
+	mustEmbedUnimplementedControllerServiceServer()
 }
 
-// UnimplementedRegulatorServiceServer must be embedded to have
+// UnimplementedControllerServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedRegulatorServiceServer struct{}
+type UnimplementedControllerServiceServer struct{}
 
-func (UnimplementedRegulatorServiceServer) StoreToController(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+func (UnimplementedControllerServiceServer) StoreToController(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreToController not implemented")
 }
-func (UnimplementedRegulatorServiceServer) mustEmbedUnimplementedRegulatorServiceServer() {}
-func (UnimplementedRegulatorServiceServer) testEmbeddedByValue()                          {}
+func (UnimplementedControllerServiceServer) mustEmbedUnimplementedControllerServiceServer() {}
+func (UnimplementedControllerServiceServer) testEmbeddedByValue()                           {}
 
-// UnsafeRegulatorServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RegulatorServiceServer will
+// UnsafeControllerServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ControllerServiceServer will
 // result in compilation errors.
-type UnsafeRegulatorServiceServer interface {
-	mustEmbedUnimplementedRegulatorServiceServer()
+type UnsafeControllerServiceServer interface {
+	mustEmbedUnimplementedControllerServiceServer()
 }
 
-func RegisterRegulatorServiceServer(s grpc.ServiceRegistrar, srv RegulatorServiceServer) {
-	// If the following call pancis, it indicates UnimplementedRegulatorServiceServer was
+func RegisterControllerServiceServer(s grpc.ServiceRegistrar, srv ControllerServiceServer) {
+	// If the following call pancis, it indicates UnimplementedControllerServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&RegulatorService_ServiceDesc, srv)
+	s.RegisterService(&ControllerService_ServiceDesc, srv)
 }
 
-func _RegulatorService_StoreToController_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ControllerService_StoreToController_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegulatorServiceServer).StoreToController(ctx, in)
+		return srv.(ControllerServiceServer).StoreToController(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RegulatorService_StoreToController_FullMethodName,
+		FullMethod: ControllerService_StoreToController_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegulatorServiceServer).StoreToController(ctx, req.(*emptypb.Empty))
+		return srv.(ControllerServiceServer).StoreToController(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// RegulatorService_ServiceDesc is the grpc.ServiceDesc for RegulatorService service.
+// ControllerService_ServiceDesc is the grpc.ServiceDesc for ControllerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RegulatorService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "controller.RegulatorService",
-	HandlerType: (*RegulatorServiceServer)(nil),
+var ControllerService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "controller.ControllerService",
+	HandlerType: (*ControllerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "StoreToController",
-			Handler:    _RegulatorService_StoreToController_Handler,
+			Handler:    _ControllerService_StoreToController_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

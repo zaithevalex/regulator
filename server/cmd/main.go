@@ -15,7 +15,7 @@ var controller server.Controller
 var timeInterval, timeShift time.Duration
 
 type ControllerServer struct {
-	db.RegulatorServiceServer
+	db.ControllerServiceServer
 }
 
 func init() {
@@ -34,7 +34,7 @@ func main() {
 	}
 
 	server := grpc.NewServer()
-	db.RegisterRegulatorServiceServer(server, &ControllerServer{})
+	db.RegisterControllerServiceServer(server, &ControllerServer{})
 
 	err = server.Serve(lis)
 	if err != nil {
