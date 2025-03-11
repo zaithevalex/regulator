@@ -4,7 +4,6 @@ import (
 	"context"
 	db "controller/proto"
 	"controller/server"
-	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
@@ -46,7 +45,6 @@ func main() {
 func (s *ControllerServer) StoreToController(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	if controller.StartTime.UnixMilli() < time.Now().Add(timeShift).UnixMilli() {
 		controller.Push(timeInterval)
-		fmt.Println(controller.Length(), controller.StartTime, time.Now())
 	}
 
 	return nil, nil
