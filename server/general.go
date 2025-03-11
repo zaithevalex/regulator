@@ -61,7 +61,7 @@ func (c Controller) All() []Event {
 	return events
 }
 
-func (c *Controller) First() *Event {
+func (c Controller) First() *Event {
 	for len(c.EventBlocks) > 0 {
 		if len(*c.EventBlocks[0]) > 0 {
 			return (*c.EventBlocks[0])[0]
