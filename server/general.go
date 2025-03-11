@@ -14,32 +14,34 @@ const (
 
 type (
 	Event struct {
-		content [][]byte
+		content []byte
 		Time    time.Time
 	}
 
 	Controller struct {
-		Buffer   []*Event
-		Length   int
-		Capacity int
+		Buffer    []*EventBlock
+		Length    int
+		Capacity  int
+		StartTime time.Time
 	}
+
+	EventBlock []*Event
 )
 
-func GeneratePayload(amount int) [][]byte {
-	eventsAmount := rand.Intn(amount) + 1
-
-	var payloadList [][]byte
-	for range eventsAmount {
-		payloadList = append(payloadList, make([]byte, rand.Intn(maxRandomLength-minRandomLength+1)+minRandomLength))
+func generateEventBlock(start, end time.Time) *EventBlock {
+	eventBlock := EventBlock{}
+	for range rand.Intn(maxGeneratedEvents) {
+		eventBlock = append(eventBlock, &Event{
+			content: make([]byte, rand.Intn(maxRandomLength-minRandomLength+1)+minRandomLength),
+			Time:    time.UnixMilli(rand.Int63n(end.UnixMilli()-start.UnixMilli()) + start.UnixMilli()),
+		})
 	}
 
-	return payloadList
+	return &eventBlock
 }
 
-func (c *Controller) GenerateTimes(duration time.Duration) {
-	payload := GeneratePayload(maxGeneratedEvents)
-
-	c.Buffer = append(c.Buffer, &Event{content: payload})
-	c.Buffer[len(c.Buffer)-1].Time = c.Buffer[len(c.Buffer)-2].Time.Add(duration)
-	c.Length += len(c.Buffer[len(c.Buffer)-1].content)
+func (c *Controller) Push(end time.Time) {
+	c.Buffer = append(c.Buffer, generateEventBlock(c.StartTime, end))
+	c.Length++
+	c.StartTime = end
 }
