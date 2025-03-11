@@ -9,20 +9,20 @@ import (
 const (
 	Capacity           = 50
 	maxGeneratedEvents = 10
-	minRandomLength    = 46
-	maxRandomLength    = 1500
 )
 
 type (
 	Event struct {
-		content []byte
+		Content byte
 		Time    time.Time
 	}
 
 	Controller struct {
-		Buffer    []*EventBlock
-		Capacity  int
-		StartTime time.Time
+		EventBlocks []*EventBlock
+		Capacity    int
+		StartTime   time.Time
+
+		Input chan<- byte
 	}
 
 	EventBlock []*Event
@@ -32,7 +32,7 @@ func generateEventBlock(start, end time.Time) *EventBlock {
 	eventBlock := EventBlock{}
 	for range rand.Intn(maxGeneratedEvents) {
 		eventBlock = append(eventBlock, &Event{
-			content: make([]byte, rand.Intn(maxRandomLength-minRandomLength+1)+minRandomLength),
+			Content: byte(rand.Intn(128)),
 			Time:    time.UnixMilli(rand.Int63n(end.UnixMilli()-start.UnixMilli()) + start.UnixMilli()),
 		})
 	}
@@ -49,9 +49,32 @@ func generateEventBlock(start, end time.Time) *EventBlock {
 	return &eventBlock
 }
 
+func (c Controller) All() []Event {
+	events := []Event{}
+
+	for _, eventBlock := range c.EventBlocks {
+		for _, event := range *eventBlock {
+			events = append(events, *event)
+		}
+	}
+
+	return events
+}
+
+func (c *Controller) First() *Event {
+	for len(c.EventBlocks) > 0 {
+		if len(*c.EventBlocks[0]) > 0 {
+			return (*c.EventBlocks[0])[0]
+		} else {
+			c.EventBlocks = c.EventBlocks[1:]
+		}
+	}
+	return nil
+}
+
 func (c Controller) Length() int {
 	l := 0
-	for _, event := range c.Buffer {
+	for _, event := range c.EventBlocks {
 		l += len(*event)
 	}
 
@@ -59,16 +82,16 @@ func (c Controller) Length() int {
 }
 
 func (c *Controller) Pop() *Event {
-	if len(c.Buffer) == 0 {
+	if len(c.EventBlocks) == 0 {
 		return nil
 	}
 
 	event := &Event{}
-	if len(*c.Buffer[0]) != 0 {
-		event = (*c.Buffer[0])[0]
-		*c.Buffer[0] = (*c.Buffer[0])[1:]
+	if len(*c.EventBlocks[0]) != 0 {
+		event = (*c.EventBlocks[0])[0]
+		*c.EventBlocks[0] = (*c.EventBlocks[0])[1:]
 	} else {
-		c.Buffer = c.Buffer[1:]
+		c.EventBlocks = c.EventBlocks[1:]
 		c.Pop()
 	}
 
@@ -77,6 +100,6 @@ func (c *Controller) Pop() *Event {
 
 func (c *Controller) Push(delta time.Duration) {
 	end := c.StartTime.Add(delta)
-	c.Buffer = append(c.Buffer, generateEventBlock(c.StartTime, end))
+	c.EventBlocks = append(c.EventBlocks, generateEventBlock(c.StartTime, end))
 	c.StartTime = end
 }
