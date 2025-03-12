@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	db "controller/proto"
+	db "controller/tools/controller/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"

@@ -1,17 +1,22 @@
 package lib
 
 import (
-	"controller/server"
+	"math/rand"
+	"slices"
 	"time"
 )
 
+const (
+	maxGeneratedEvents = 10
+)
+
 type Queue struct {
-	EventBlocks []*server.EventBlock
+	EventBlocks []*EventBlock
 	StartTime   time.Time
 }
 
-func (c Queue) All() []server.Event {
-	var events []server.Event
+func (c Queue) All() []Event {
+	var events []Event
 	for _, eventBlock := range c.EventBlocks {
 		for _, event := range *eventBlock {
 			events = append(events, *event)
@@ -21,7 +26,7 @@ func (c Queue) All() []server.Event {
 	return events
 }
 
-func (c Queue) First() *server.Event {
+func (c Queue) First() *Event {
 	for len(c.EventBlocks) > 0 {
 		if len(*c.EventBlocks[0]) > 0 {
 			return (*c.EventBlocks[0])[0]
@@ -42,7 +47,7 @@ func (c Queue) Length() int {
 	return l
 }
 
-func (c *Queue) Pop() *server.Event {
+func (c *Queue) Pop() *Event {
 	for len(c.EventBlocks) > 0 {
 		if len(*c.EventBlocks[0]) > 0 {
 			event := (*c.EventBlocks[0])[0]
@@ -57,8 +62,29 @@ func (c *Queue) Pop() *server.Event {
 	return nil
 }
 
-func (c *Queue) Push(delta time.Duration) {
+func (c *Queue) Generate(delta time.Duration) {
 	end := c.StartTime.Add(delta)
-	c.EventBlocks = append(c.EventBlocks, server.GenerateEventBlock(c.StartTime, end))
+	c.EventBlocks = append(c.EventBlocks, generateEventBlock(c.StartTime, end))
 	c.StartTime = end
+}
+
+func generateEventBlock(start, end time.Time) *EventBlock {
+	eventBlock := EventBlock{}
+	for range rand.Intn(maxGeneratedEvents) {
+		eventBlock = append(eventBlock, &Event{
+			Content: byte(rand.Intn(128)),
+			Time:    time.UnixMilli(rand.Int63n(end.UnixMilli()-start.UnixMilli()) + start.UnixMilli()),
+		})
+	}
+
+	slices.SortFunc(eventBlock, func(a, b *Event) int {
+		if a.Time.UnixMilli() > b.Time.UnixMilli() {
+			return 1
+		} else if a.Time.UnixMilli() < b.Time.UnixMilli() {
+			return -1
+		} else {
+			return 0
+		}
+	})
+	return &eventBlock
 }

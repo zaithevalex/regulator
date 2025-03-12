@@ -1,42 +1,53 @@
 package server
 
 import (
-	"math/rand"
-	"slices"
+	"context"
+	"controller/lib"
+	db "controller/tools/controller/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"time"
 )
 
-const (
-	Capacity           = 50
-	maxGeneratedEvents = 10
+var (
+	startTime               time.Time
+	timeInterval, timeShift time.Duration
+
+	queue      lib.Queue
+	controller lib.Controller
 )
 
 type (
-	Event struct {
-		Content byte
-		Time    time.Time
+	ControllerServer struct {
+		db.ControllerServiceServer
 	}
-
-	EventBlock []*Event
 )
 
-func GenerateEventBlock(start, end time.Time) *EventBlock {
-	eventBlock := EventBlock{}
-	for range rand.Intn(maxGeneratedEvents) {
-		eventBlock = append(eventBlock, &Event{
-			Content: byte(rand.Intn(128)),
-			Time:    time.UnixMilli(rand.Int63n(end.UnixMilli()-start.UnixMilli()) + start.UnixMilli()),
-		})
+func init() {
+	timeInterval, timeShift = 10*time.Second, 5*time.Second
+	startTime = time.Now().Add(timeInterval)
+
+	queue = lib.Queue{
+		StartTime: startTime,
 	}
 
-	slices.SortFunc(eventBlock, func(a, b *Event) int {
-		if a.Time.UnixMilli() > b.Time.UnixMilli() {
-			return 1
-		} else if a.Time.UnixMilli() < b.Time.UnixMilli() {
-			return -1
-		} else {
-			return 0
+	controller = lib.Controller{
+		Buf: &lib.Buffer{
+			Events:   make([]*lib.Event, 0),
+			Capacity: lib.Capacity,
+		},
+	}
+}
+
+func (s *ControllerServer) StoreToController(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	if e := queue.First(); e != nil {
+		if e.Time.UnixMilli() < time.Now().UnixMilli() {
+			controller.Buf.Events = append(controller.Buf.Events, queue.Pop())
 		}
-	})
-	return &eventBlock
+	}
+
+	if queue.StartTime.UnixMilli() < time.Now().Add(timeShift).UnixMilli() {
+		queue.Generate(timeInterval)
+	}
+
+	return nil, nil
 }
