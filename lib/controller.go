@@ -13,8 +13,7 @@ const (
 
 type (
 	Buffer struct {
-		Capacity int
-		Events   []*Event
+		Events []*Event
 	}
 
 	Controller struct {

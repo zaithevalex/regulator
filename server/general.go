@@ -4,6 +4,7 @@ import (
 	"context"
 	"controller/lib"
 	db "controller/tools/controller/proto"
+	"fmt"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"time"
 )
@@ -32,8 +33,7 @@ func init() {
 
 	controller = lib.Controller{
 		Buf: &lib.Buffer{
-			Events:   make([]*lib.Event, 0),
-			Capacity: lib.Capacity,
+			Events: make([]*lib.Event, 0),
 		},
 	}
 }
@@ -42,6 +42,7 @@ func (s *ControllerServer) StoreToController(_ context.Context, _ *emptypb.Empty
 	if e := queue.First(); e != nil {
 		if e.Time.UnixMilli() < time.Now().UnixMilli() {
 			controller.Buf.Events = append(controller.Buf.Events, queue.Pop())
+			fmt.Println(controller.Buf.Events)
 		}
 	}
 
