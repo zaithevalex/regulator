@@ -1,23 +1,38 @@
 package main
 
 import (
-	controller "controller/server"
-	db "controller/tools/controller/proto"
-	"google.golang.org/grpc"
-	"net"
+	"controller/lib"
+	"time"
+)
+
+var (
+	startTime               time.Time
+	timeInterval, timeShift time.Duration
+
+	queue      lib.Queue
+	controller lib.Controller
 )
 
 func main() {
-	lis, err := net.Listen("tcp", ":8080")
-	if err != nil {
-		panic(err)
+	timeInterval, timeShift = 10*time.Second, 5*time.Second
+	startTime = time.Now().Add(timeInterval)
+
+	queue = lib.Queue{
+		StartTime: startTime,
 	}
 
-	server := grpc.NewServer()
-	db.RegisterControllerServiceServer(server, &controller.ControllerServer{})
-
-	err = server.Serve(lis)
-	if err != nil {
-		panic(err)
+	controller = lib.Controller{
+		Buf: &lib.Buffer{
+			Events: make([]*lib.Event, 0),
+		},
+		OutputSpeed: 0.002,
 	}
+
+	var toControllerChannel, toNetworkControllerChannel = make(chan *lib.Event), make(chan *lib.Event)
+
+	go queue.Send(timeInterval, timeShift, toControllerChannel)
+	go controller.Input(toControllerChannel)
+	go controller.Output(toNetworkControllerChannel)
+
+	time.Sleep(time.Hour)
 }
