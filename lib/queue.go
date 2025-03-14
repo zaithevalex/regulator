@@ -100,5 +100,6 @@ func generateEventBlock(start, end time.Time) *EventBlock {
 			return 0
 		}
 	})
+
 	return &eventBlock
 }

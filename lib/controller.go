@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const toMicros = 1000000.0
+
 type (
 	Buffer struct {
 		Events []*Event
@@ -13,7 +15,7 @@ type (
 	Controller struct {
 		Buf *Buffer
 
-		// OutputSpeed: amount of events per millis
+		// OutputSpeed: amount of events per seconds
 		OutputSpeed float64
 	}
 
@@ -27,10 +29,8 @@ type (
 
 func (c *Controller) Input(toControllerChannel chan *Event) {
 	for {
-		//mu.Lock()
 		c.Buf.Events = append(c.Buf.Events, <-toControllerChannel)
-		fmt.Println("c.Buf.Events:", c.Buf.Events, time.Now())
-		//mu.Unlock()
+		fmt.Println("CONTROLLER BUFFER:", c.Buf.Events)
 	}
 }
 
@@ -51,12 +51,11 @@ func (c *Controller) Pop() *Event {
 
 func (c *Controller) Output(toNetworkControllerChannel chan *Event) {
 	for {
-		event := c.Pop()
-
-		if event != nil {
-			time.Sleep(5 * time.Second)
+		if len(c.Buf.Events) > 0 {
+			time.Sleep(time.Microsecond * time.Duration(c.OutputSpeed*toMicros))
+			event := c.Pop()
 			toNetworkControllerChannel <- event
-			fmt.Printf("EVENT: %p, TIME: %v, NOW: %v\n", event, event.Time, time.Now())
+			fmt.Printf("EVENT: %p LOADED TO NETWORK\n", event)
 		}
 	}
 }
