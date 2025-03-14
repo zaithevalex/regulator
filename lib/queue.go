@@ -38,6 +38,12 @@ func (c Queue) First() *Event {
 	return nil
 }
 
+func (c *Queue) Generate(delta time.Duration) {
+	end := c.StartTime.Add(delta)
+	c.EventBlocks = append(c.EventBlocks, generateEventBlock(c.StartTime, end))
+	c.StartTime = end
+}
+
 func (c Queue) Length() int {
 	l := 0
 	for _, event := range c.EventBlocks {
@@ -62,10 +68,18 @@ func (c *Queue) Pop() *Event {
 	return nil
 }
 
-func (c *Queue) Generate(delta time.Duration) {
-	end := c.StartTime.Add(delta)
-	c.EventBlocks = append(c.EventBlocks, generateEventBlock(c.StartTime, end))
-	c.StartTime = end
+func (q *Queue) Send(timeInterval, timeShift time.Duration, toInputControllerChannel chan *Event) {
+	for {
+		if e := q.First(); e != nil {
+			if e.Time.UnixMilli() < time.Now().UnixMilli() {
+				toInputControllerChannel <- q.Pop()
+			}
+		}
+
+		if q.StartTime.UnixMilli() < time.Now().Add(timeShift).UnixMilli() {
+			q.Generate(timeInterval)
+		}
+	}
 }
 
 func generateEventBlock(start, end time.Time) *EventBlock {

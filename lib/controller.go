@@ -1,14 +1,8 @@
 package lib
 
 import (
+	"fmt"
 	"time"
-)
-
-const (
-	Capacity = 50
-
-	Close OutputState = iota
-	Open
 )
 
 type (
@@ -17,8 +11,10 @@ type (
 	}
 
 	Controller struct {
-		Buf    *Buffer
-		Output OutputState
+		Buf *Buffer
+
+		// OutputSpeed: amount of events per millis
+		OutputSpeed float64
 	}
 
 	Event struct {
@@ -27,8 +23,6 @@ type (
 	}
 
 	EventBlock []*Event
-
-	OutputState int
 )
 
 func (c *Controller) Push(e *Event) {
@@ -36,7 +30,7 @@ func (c *Controller) Push(e *Event) {
 }
 
 func (c *Controller) Pop() *Event {
-	if c.Output == Close {
+	if len(c.Buf.Events) == 0 {
 		return nil
 	}
 
@@ -44,4 +38,24 @@ func (c *Controller) Pop() *Event {
 	c.Buf.Events = c.Buf.Events[1:]
 
 	return e
+}
+
+func (c *Controller) Input(toControllerChannel chan *Event) {
+	for {
+		//mu.Lock()
+		c.Buf.Events = append(c.Buf.Events, <-toControllerChannel)
+		fmt.Println("c.Buf.Events:", c.Buf.Events)
+		//mu.Unlock()
+	}
+}
+
+func (c *Controller) Output(toNetworkControllerChannel chan *Event) {
+	for {
+		event := c.Pop()
+
+		if event != nil {
+			time.Sleep(5 * time.Second)
+			fmt.Printf("Event: %p, Event.time: %v, now: %v\n", event, event.Time, time.Now())
+		}
+	}
 }
