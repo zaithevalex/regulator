@@ -52,5 +52,5 @@ func Run() {
 	go controller.Output(toNetworkControllerChannel)
 	go network.Input(toNetworkControllerChannel)
 	go network.Output(toBacklog)
-	<-toBacklog
+	//<-toBacklog
 }

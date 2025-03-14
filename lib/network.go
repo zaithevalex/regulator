@@ -43,7 +43,7 @@ func (network *Network) Output(toBacklog chan *Event) {
 		if len(network.Buf.Events) > 0 {
 			time.Sleep(time.Microsecond * time.Duration(network.OutputSpeed*toMicros))
 			event := network.Pop()
-			toBacklog <- event
+			//toBacklog <- event
 			fmt.Printf("POP FROM NETWORK BUFFER: %p, TIME.NOW: %v\n", event, time.Now())
 		}
 	}
