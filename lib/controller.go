@@ -6,6 +6,10 @@ import (
 )
 
 const toMicros = 1000000.0
+const (
+	Close OutputState = iota
+	Open
+)
 
 type (
 	Buffer struct {
@@ -15,8 +19,10 @@ type (
 	Controller struct {
 		Buf *Buffer
 
-		// OutputSpeed: amount of events per seconds
-		OutputSpeed float64
+		// FullTransmittedData: amount of events per seconds
+		FullTransmittedData int
+		//
+		Out OutputState
 	}
 
 	Event struct {
@@ -24,15 +30,9 @@ type (
 		Time    time.Time
 	}
 
-	EventBlock []*Event
+	EventBlock  []*Event
+	OutputState int
 )
-
-func (c *Controller) Input(toControllerChannel chan *Event) {
-	for {
-		c.Buf.Events = append(c.Buf.Events, <-toControllerChannel)
-		fmt.Println("CONTROLLER BUFFER:", c.Buf.Events)
-	}
-}
 
 func (c *Controller) Push(e *Event) {
 	c.Buf.Events = append(c.Buf.Events, e)
@@ -49,13 +49,21 @@ func (c *Controller) Pop() *Event {
 	return e
 }
 
-func (c *Controller) Output(toNetworkControllerChannel chan *Event) {
+func (c *Controller) Receive(toControllerChannel, toNetworkControllerChannel chan *Event) {
 	for {
-		if len(c.Buf.Events) > 0 {
-			time.Sleep(time.Microsecond * time.Duration(c.OutputSpeed*toMicros))
-			event := c.Pop()
-			toNetworkControllerChannel <- event
-			fmt.Printf("EVENT: %p LOADED TO NETWORK\n", event)
+		if c.Out == Open {
+			fmt.Printf("x(t): %d\n", c.FullTransmittedData)
+
+			if len(c.Buf.Events) > 0 {
+				event := c.Pop()
+				toNetworkControllerChannel <- event
+				c.FullTransmittedData++
+			} else {
+				toNetworkControllerChannel <- <-toControllerChannel
+				c.FullTransmittedData++
+			}
+		} else {
+			c.Buf.Events = append(c.Buf.Events, <-toControllerChannel)
 		}
 	}
 }
