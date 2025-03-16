@@ -2,6 +2,7 @@ package src
 
 import (
 	"controller/lib"
+	"os"
 	"time"
 )
 
@@ -45,9 +46,9 @@ func init() {
 	toNetworkControllerChannel = make(chan *lib.Event)
 }
 
-func Run() {
+func Run(xFile, yFile *os.File) {
 	go queue.Send(timeInterval, timeShift, toControllerChannel)
-	go controller.Receive(toControllerChannel, toNetworkControllerChannel)
+	go controller.Receive(toControllerChannel, toNetworkControllerChannel, xFile)
 	go network.Input(toNetworkControllerChannel)
-	go network.Output()
+	go network.Output(yFile)
 }

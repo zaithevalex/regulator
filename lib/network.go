@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -47,13 +48,18 @@ func (network *Network) Pop() *Event {
 	return e
 }
 
-func (network *Network) Output() {
+func (network *Network) Output(file *os.File) error {
 	for {
 		if len(network.Buf.Events) > 0 {
 			time.Sleep(time.Microsecond * time.Duration(network.Latency*toMicros))
 			network.Pop()
 			network.FullTransmittedData++
 			fmt.Printf("y(t): %d\n", network.FullTransmittedData)
+
+			_, err := file.WriteString(fmt.Sprintf("%d ", time.Now().UnixMilli()))
+			if err != nil {
+				return err
+			}
 		}
 	}
 }

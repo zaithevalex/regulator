@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -49,18 +50,27 @@ func (c *Controller) Pop() *Event {
 	return e
 }
 
-func (c *Controller) Receive(toControllerChannel, toNetworkControllerChannel chan *Event) {
+func (c *Controller) Receive(toControllerChannel, toNetworkControllerChannel chan *Event, file *os.File) error {
 	for {
 		if c.Out == Open {
 			fmt.Printf("x(t): %d\n", c.FullTransmittedData)
 
 			if len(c.Buf.Events) > 0 {
-				event := c.Pop()
-				toNetworkControllerChannel <- event
+				toNetworkControllerChannel <- c.Pop()
 				c.FullTransmittedData++
+
+				_, err := file.WriteString(fmt.Sprintf("%d ", time.Now().UnixMilli()))
+				if err != nil {
+					return err
+				}
 			} else {
 				toNetworkControllerChannel <- <-toControllerChannel
 				c.FullTransmittedData++
+
+				_, err := file.WriteString(fmt.Sprintf("%d ", time.Now().UnixMilli()))
+				if err != nil {
+					return err
+				}
 			}
 		} else {
 			c.Buf.Events = append(c.Buf.Events, <-toControllerChannel)
