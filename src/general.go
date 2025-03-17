@@ -38,7 +38,7 @@ func init() {
 		Buf: &lib.Buffer{
 			Events: make([]*lib.Event, 0),
 		},
-		Latency:    0.3,
+		Latency:    0.1,
 		WindowSize: 5,
 	}
 
