@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.signal import argrelextrema
 from sklearn.linear_model import LinearRegression
 
 with open('./dataset/y.txt', 'r') as file:
@@ -8,55 +7,46 @@ with open('./dataset/y.txt', 'r') as file:
 
 times = []
 numbers = []
-
-i = 1
 for line in lines:
     times.extend(int(num) for num in line.strip().split() if num)
 
 for i in range(0, len(times), 1):
     numbers.append(i+1)
 
-x = np.array(times)
-y = np.array(numbers)
-
-# np_times = np.array(times)
-# np_numbers = np.array(numbers)
-#
-# linear_spline = interp1d(np_numbers, np_times, kind='linear')
-# spline_numbers = np.linspace(np_numbers.min(), np_numbers.max(), len(numbers))
-# spline_times = linear_spline(spline_numbers)
-#
-# plt.figure(figsize=(8,5))
-# plt.plot(np_numbers, np_times, 'o', label='before')
-# plt.plot(spline_numbers, spline_times, label='spline')
-#
-# plt.xlabel("t")
-# plt.ylabel("y(t)")
-# plt.show()
+np_time = np.array(times)
+np_numbers = np.array(numbers)
 
 num_segments = 15
-breakpoints = np.linspace(0, len(x)-1, num_segments + 1).astype(int)
+breakpoints = np.linspace(0, len(np_time) - 1, num_segments + 1).astype(int)
+predicted_y = np.zeros_like(np_numbers)
 
-segments = []
+steps = []
 for i in range(num_segments):
-    start = breakpoints[i]
+    start = breakpoints[i] + 1
     end = breakpoints[i + 1] + 1
-    x_segment = x[start:end].reshape(-1, 1)
-    y_segment = y[start:end]
 
-    # Линейная регрессия
+    for j in range(end - start):
+        steps.append(i)
+
+    x_segment = np_time[start:end].reshape(-1, 1)
+    y_segment = np_numbers[start:end]
+
     model = LinearRegression().fit(x_segment, y_segment)
-    segments.append((model.coef_[0], model.intercept_))
+    predicted_y[start:end] = model.predict(x_segment)
 
+steps.append(steps[len(steps)-1])
 
-plt.scatter(x, y, color='blue', label='Данные')
-for i in range(num_segments):
-    m, b = segments[i]
-    plt.plot(x[breakpoints[i]:breakpoints[i + 1] + 1],
-             m * x[breakpoints[i]:breakpoints[i + 1] + 1] + b,
-             color='red')
-plt.xlabel('X')
-plt.ylabel('Y')
-plt.title('Кусочная линейная аппроксимация для возрастающей кривой')
+plt.subplot(1, 2, 1)
+plt.scatter(np_time, np_numbers, color='green', label='Data', alpha=0.5)
+plt.plot(np_time, predicted_y, color='red', label='Piecewise linear approximation')
+plt.xlabel('t, unixtime(ms)')
+plt.ylabel('y(t)')
 plt.legend()
+
+plt.subplot(1, 2, 2)
+plt.step(np_time, steps, color='blue')
+plt.xlabel('t, unixtime(ms)')
+plt.ylabel('step')
+plt.legend()
+
 plt.show()
