@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import interp1d
 
-with open('./dataset/x.txt', 'r') as file:
+with open('./dataset/y.txt', 'r') as file:
     lines = file.readlines()
 
 times = []
@@ -18,14 +18,14 @@ for i in range(0, len(times), 1):
 np_times = np.array(times)
 np_numbers = np.array(numbers)
 
-spline = CubicSpline(numbers, times)
-spline_numbers = np.linspace(np_numbers.min(), np_numbers.max(), 100)
-spline_times = spline(spline_numbers)
+linear_spline = interp1d(np_numbers, np_times, kind='linear')
+spline_numbers = np.linspace(np_numbers.min(), np_numbers.max(), len(numbers))
+spline_times = linear_spline(spline_numbers)
 
 plt.figure(figsize=(8,5))
 plt.plot(np_numbers, np_times, 'o', label='before')
 plt.plot(spline_numbers, spline_times, label='spline')
 
 plt.xlabel("t")
-plt.ylabel("x(t)")
+plt.ylabel("y(t)")
 plt.show()

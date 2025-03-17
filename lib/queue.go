@@ -69,20 +69,16 @@ func (c *Queue) Pop() *Event {
 }
 
 func (q *Queue) Send(timeInterval, timeShift time.Duration, toInputControllerChannel chan *Event) {
-	//for {
-	//	if e := q.First(); e != nil {
-	//		if e.Time.UnixMilli() < time.Now().UnixMilli() {
-	//			toInputControllerChannel <- q.Pop()
-	//		}
-	//	}
-	//
-	//	if q.StartTime.UnixMilli() < time.Now().Add(timeShift).UnixMilli() {
-	//		q.Generate(timeInterval)
-	//	}
-	//}
-
 	for {
-		
+		if e := q.First(); e != nil {
+			if e.Time.UnixMilli() < time.Now().UnixMilli() {
+				toInputControllerChannel <- q.Pop()
+			}
+		}
+
+		if q.StartTime.UnixMilli() < time.Now().Add(timeShift).UnixMilli() {
+			q.Generate(timeInterval)
+		}
 	}
 }
 
