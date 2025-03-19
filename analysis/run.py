@@ -69,7 +69,7 @@ for i in range(len(linearCurves)-1):
     if linearCurves[i].y0 > linearCurves[i].y1:
         linearCurves[i].y1 = linearCurves[i].y0
 
-plt.scatter(np_time, np_numbers, color='green', label='Data', alpha=0.5)
+plt.scatter(np_time, np_numbers, color='green', label='Dataset', alpha=0.5)
 plt.scatter([], [], color='blue', label='Approximation')
 for i in range(len(linearCurves)):
     plt.plot(
