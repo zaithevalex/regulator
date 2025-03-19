@@ -2,16 +2,26 @@ package lib
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
 
 type Network struct {
 	Buf *Buffer
 
-	// OutputSpeed: amount of events per millis
-	OutputSpeed float64
+	// Latency: amount of events per millis
+	Latency float64
 
-	WindowSize int
+	WindowSize          int
+	FullTransmittedData int
+}
+
+func (network *Network) Backlog(c *Controller) {
+	if c.FullTransmittedData >= network.FullTransmittedData+network.WindowSize {
+		c.Out = Open
+	} else {
+		c.Out = Close
+	}
 }
 
 func (network *Network) Input(toNetworkControllerChannel chan *Event) {
@@ -38,13 +48,18 @@ func (network *Network) Pop() *Event {
 	return e
 }
 
-func (network *Network) Output(toBacklog chan *Event) {
+func (network *Network) Output(file *os.File) error {
 	for {
 		if len(network.Buf.Events) > 0 {
-			time.Sleep(time.Microsecond * time.Duration(network.OutputSpeed*toMicros))
-			event := network.Pop()
-			//toBacklog <- event
-			fmt.Printf("POP FROM NETWORK BUFFER: %p, TIME.NOW: %v\n", event, time.Now())
+			time.Sleep(time.Microsecond * time.Duration(network.Latency*toMicros))
+			network.Pop()
+			network.FullTransmittedData++
+			fmt.Printf("y(t): %d\n", network.FullTransmittedData)
+
+			_, err := file.WriteString(fmt.Sprintf("%d ", time.Now().UnixMilli()))
+			if err != nil {
+				return err
+			}
 		}
 	}
 }

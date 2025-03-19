@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	maxGeneratedEvents = 10
+	maxGeneratedEvents = 40
 )
 
 type Queue struct {

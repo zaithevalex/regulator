@@ -2,6 +2,7 @@ package src
 
 import (
 	"controller/lib"
+	"os"
 	"time"
 )
 
@@ -30,27 +31,24 @@ func init() {
 		Buf: &lib.Buffer{
 			Events: make([]*lib.Event, 0),
 		},
-		OutputSpeed: 4,
+		Out: lib.Open,
 	}
 
 	network = lib.Network{
 		Buf: &lib.Buffer{
 			Events: make([]*lib.Event, 0),
 		},
-		OutputSpeed: 8,
-		WindowSize:  5,
+		Latency:    0.1,
+		WindowSize: 5,
 	}
 
 	toControllerChannel = make(chan *lib.Event)
 	toNetworkControllerChannel = make(chan *lib.Event)
-	toBacklog = make(chan *lib.Event)
 }
 
-func Run() {
+func Run(xFile, yFile *os.File) {
 	go queue.Send(timeInterval, timeShift, toControllerChannel)
-	go controller.Input(toControllerChannel)
-	go controller.Output(toNetworkControllerChannel)
+	go controller.Receive(toControllerChannel, toNetworkControllerChannel, xFile)
 	go network.Input(toNetworkControllerChannel)
-	go network.Output(toBacklog)
-	//<-toBacklog
+	go network.Output(yFile)
 }
