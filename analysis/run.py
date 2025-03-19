@@ -5,7 +5,6 @@ from sklearn.linear_model import LinearRegression
 def f(k, b, x):
     return k * x + b
 
-
 class LinearCurve:
     def __init__(self, start_t, end_t, start_n):
         self.x0 = start_t
@@ -33,7 +32,7 @@ for i in range(0, len(times), 1):
 np_time = np.array(times)
 np_numbers = np.array(numbers)
 
-num_segments = 30
+num_segments = 15
 breakpoints = np.linspace(0, len(np_time) - 1, num_segments + 1).astype(int)
 predicted_y = np.zeros_like(np_numbers)
 
@@ -51,32 +50,40 @@ for i in range(num_segments):
     if end >= len(np_time):
         break
 
-    # linearCurves.append(LinearCurve(
-    #     start,
-    #     end,
-    #     np_time,
-    #     np_numbers))
-
     linearCurves.append(LinearCurve(
-        start,
-        end,
-        np_time[start]
-    ))
+        np_time[start],
+        np_time[end],
+                    np_numbers[start]
+                    ))
 
-# for i in range(len(linearCurves)-1):
-#     linearCurves[i].y1 = linearCurves[i+1].y0
-#     if linearCurves[i].y0 > linearCurves[i].y1:
-#         linearCurves[i].y1 = linearCurves[i].y0
+linearCurves.append(LinearCurve(
+    np_time[breakpoints[num_segments]],
+    np_time[breakpoints[num_segments]],
+    np_numbers[breakpoints[num_segments]]
+))
 
-# plt.subplot(1, 2, 1)
+for i in range(len(linearCurves)-1):
+    linearCurves[i].x1 = linearCurves[i+1].x0
+    linearCurves[i].y1 = linearCurves[i+1].y0
+
+    if linearCurves[i].y0 > linearCurves[i].y1:
+        linearCurves[i].y1 = linearCurves[i].y0
+
 plt.scatter(np_time, np_numbers, color='green', label='Data', alpha=0.5)
-plt.plot(np_time, predicted_y, color='red', label='Piecewise linear approximation')
-
+plt.scatter([], [], color='blue', label='Approximation')
 for i in range(len(linearCurves)):
-    plt.plot(np_time[linearCurves[i].x0:linearCurves[i].x1], f(linearCurves[i].k(), linearCurves[i].b(), np_time[linearCurves[i].x0:linearCurves[i].x1]), color='blue')
+    plt.plot(
+        np.linspace(linearCurves[i].x0, linearCurves[i].x1, 100),
+        f(
+            linearCurves[i].k(),
+            linearCurves[i].b(),
+            np.linspace(
+                linearCurves[i].x0,
+                linearCurves[i].x1,
+                100)),
+        color='blue')
 
 plt.xlabel('t, unixtime(ms)')
 plt.ylabel('y(t)')
 plt.legend()
-
 plt.show()
