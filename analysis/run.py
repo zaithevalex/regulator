@@ -2,8 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-def f(k, b, x):
-    return k * x + b
 
 class LinearCurve:
     def __init__(self, start_t, end_t, start_n):
@@ -17,6 +15,32 @@ class LinearCurve:
 
     def b(self):
         return self.y0 - ((self.y1 - self.y0) * self.x0) / (self.x1 - self.x0)
+
+class PieceLinearCurve:
+    def __init__(self, linearCurves, amountPoints):
+        maxlength = linearCurves[0].x1 - linearCurves[0].x0
+        for i in range(len(linearCurves)):
+            if linearCurves[i].x1 - linearCurves[i].x0 > maxlength:
+                maxlength = linearCurves[i].x1 - linearCurves[i].x0
+
+        self.times = []
+        self.events = []
+
+        start = 0
+        for i in range(len(linearCurves)):
+            interval = np.linspace(linearCurves[i].x0, linearCurves[i].x1, int(np.round((linearCurves[i].x1 - linearCurves[i].x0) * amountPoints / maxlength)))
+            for p in range(len(interval)):
+                self.times.append(interval[p])
+
+            events = linearCurve(linearCurves[i].k(), linearCurves[i].b(), self.times[start:len(self.times)])
+            for p in range(len(events)):
+                self.events.append(events[p])
+
+            start = len(self.times)
+
+
+def linearCurve(k, b, x):
+    return k * np.float64(x) + b
 
 with open('./dataset/y.txt', 'r') as file:
     lines = file.readlines()
@@ -69,19 +93,11 @@ for i in range(len(linearCurves)-1):
     if linearCurves[i].y0 > linearCurves[i].y1:
         linearCurves[i].y1 = linearCurves[i].y0
 
+p = PieceLinearCurve(linearCurves, 1000)
+
 plt.scatter(np_time, np_numbers, color='green', label='Dataset', alpha=0.5)
 plt.scatter([], [], color='blue', label='Approximation')
-for i in range(len(linearCurves)):
-    plt.plot(
-        np.linspace(linearCurves[i].x0, linearCurves[i].x1, 100),
-        f(
-            linearCurves[i].k(),
-            linearCurves[i].b(),
-            np.linspace(
-                linearCurves[i].x0,
-                linearCurves[i].x1,
-                100)),
-        color='blue')
+plt.plot(p.times, p.events, color='blue')
 
 plt.xlabel('t, unixtime(ms)')
 plt.ylabel('y(t)')
