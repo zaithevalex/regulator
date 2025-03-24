@@ -57,10 +57,20 @@ class PieceLinearCurve:
 
         return events
 
-    # def selfMinPlusConvolve(self, s):
-    #     events = []
-    #     for i in range(len(self.events)):
-    #         events.append(min(self.events[0:i-int(s)] + ))
+    def selfMinPlusConvolve(self, s):
+        events = []
+        for i in range(len(self.events)):
+            min = self.events[i] + self.events[0]
+            for j in range(0, i, 1):
+                if self.events[i - j] + self.events[j] < min:
+                    min = self.events[i - j] + self.events[j]
+
+            events.append(min)
+
+        return events
+
+    # def selfSubAddClosure(self):
+
 
 def linearCurve(k, b, x):
     return k * np.float64(x) + b
@@ -119,9 +129,9 @@ for i in range(len(linearCurves)-1):
 p = PieceLinearCurve(linearCurves, 1000)
 
 plt.scatter(np_time, np_numbers, color='green', label='Dataset', alpha=0.5)
-plt.scatter([], [], color='blue', label='Approximation')
-plt.plot(p.times, p.events, color='blue')
-plt.plot(p.times, p.selfConvolve(500), color='orange', label='Self-convolution')
+plt.plot(p.times, p.events, color='blue', label='Linear Regression')
+plt.plot(p.times, p.selfConvolve(500), color='orange', label='Self-Convolution')
+plt.plot(p.times, p.selfMinPlusConvolve(10), color='red', label='Self-MinPlusConvolution')
 
 plt.xlabel('t, unixtime(ms)')
 plt.ylabel('y(t)')
