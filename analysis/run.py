@@ -38,15 +38,29 @@ class PieceLinearCurve:
 
             start = len(self.times)
 
-    def convolve(self, shift):
+    def selfConvolve(self, shift):
+        if shift >= len(self.events):
+            shift = len(self.events) - 1
+
         events = []
         for i in range(len(self.events)):
-            if i + shift < len(self.events):
-                events.append(max(self.events[i:i+shift]))
-            else:
-                events.append(max(self.events[i:len(self.events)]))
+            max = 0
+            for j in range(0, shift, 1):
+                if i + j < len(self.events):
+                    if self.events[i + j] + self.events[j] > max:
+                        max = self.events[i + j] + self.events[j]
+                else:
+                    if self.events[len(self.events)-1] + self.events[j] > max:
+                        max = self.events[len(self.events)-1] + self.events[j]
+
+            events.append(max)
 
         return events
+
+    # def selfMinPlusConvolve(self, s):
+    #     events = []
+    #     for i in range(len(self.events)):
+    #         events.append(min(self.events[0:i-int(s)] + ))
 
 def linearCurve(k, b, x):
     return k * np.float64(x) + b
@@ -107,7 +121,7 @@ p = PieceLinearCurve(linearCurves, 1000)
 plt.scatter(np_time, np_numbers, color='green', label='Dataset', alpha=0.5)
 plt.scatter([], [], color='blue', label='Approximation')
 plt.plot(p.times, p.events, color='blue')
-plt.plot(p.times, p.convolve(1000), color='orange', label='Self-convolution')
+plt.plot(p.times, p.selfConvolve(500), color='orange', label='Self-convolution')
 
 plt.xlabel('t, unixtime(ms)')
 plt.ylabel('y(t)')
