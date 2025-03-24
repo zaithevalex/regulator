@@ -18,6 +18,12 @@ class LinearCurve:
 
 class PieceLinearCurve:
     def __init__(self, linearCurves, amountPoints):
+        if len(linearCurves) == 0 or amountPoints == 0:
+            self.times = []
+            self.events = []
+
+            return
+
         maxlength = linearCurves[0].x1 - linearCurves[0].x0
         for i in range(len(linearCurves)):
             if linearCurves[i].x1 - linearCurves[i].x0 > maxlength:
@@ -57,20 +63,27 @@ class PieceLinearCurve:
 
         return events
 
-    def selfMinPlusConvolve(self, s):
-        events = []
+    def minPlusConvolve(self, events):
+        result = []
         for i in range(len(self.events)):
-            min = self.events[i] + self.events[0]
+            min = self.events[i] + events[0]
             for j in range(0, i, 1):
-                if self.events[i - j] + self.events[j] < min:
-                    min = self.events[i - j] + self.events[j]
+                if self.events[i - j] + events[j] < min:
+                    min = self.events[i - j] + events[j]
 
-            events.append(min)
+            result.append(min)
 
-        return events
+        return result
 
-    # def selfSubAddClosure(self):
+    def selfSubAddClosure(self, amountConvolutions):
+        pieceLinearCurve = PieceLinearCurve([], 0)
+        pieceLinearCurve.times = self.times
+        pieceLinearCurve.events = self.events
 
+        for _ in range(amountConvolutions):
+            pieceLinearCurve.events = pieceLinearCurve.minPlusConvolve(self.events)
+
+        return pieceLinearCurve.events
 
 def linearCurve(k, b, x):
     return k * np.float64(x) + b
@@ -131,7 +144,8 @@ p = PieceLinearCurve(linearCurves, 1000)
 plt.scatter(np_time, np_numbers, color='green', label='Dataset', alpha=0.5)
 plt.plot(p.times, p.events, color='blue', label='Linear Regression')
 plt.plot(p.times, p.selfConvolve(500), color='orange', label='Self-Convolution')
-plt.plot(p.times, p.selfMinPlusConvolve(10), color='red', label='Self-MinPlusConvolution')
+plt.plot(p.times, p.minPlusConvolve(p.events), color='red', label='Self-MinPlusConvolution')
+plt.plot(p.times, p.selfSubAddClosure(10), color='purple', label='Self-SubAddClosure')
 
 plt.xlabel('t, unixtime(ms)')
 plt.ylabel('y(t)')
