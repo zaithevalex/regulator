@@ -17,7 +17,12 @@ class LinearCurve:
         return self.y0 - ((self.y1 - self.y0) * self.x0) / (self.x1 - self.x0)
 
 class PieceLinearCurve:
-    def __init__(self, linearCurves, amountPoints):
+    def __init__(self, linearCurves=[], amountPoints=0, times=None, events=None):
+        if times is not None and events is not None:
+            self.times = times
+            self.events = events
+            return
+
         if len(linearCurves) == 0 or amountPoints == 0:
             self.times = []
             self.events = []
@@ -44,24 +49,17 @@ class PieceLinearCurve:
 
             start = len(self.times)
 
-    def selfConvolve(self, shift):
-        if shift >= len(self.events):
-            shift = len(self.events) - 1
-
-        events = []
+    def selfConvolve(self, events):
+        result = []
         for i in range(len(self.events)):
-            max = 0
-            for j in range(0, shift, 1):
-                if i + j < len(self.events):
-                    if self.events[i + j] + self.events[j] > max:
-                        max = self.events[i + j] + self.events[j]
-                else:
-                    if self.events[len(self.events)-1] + self.events[j] > max:
-                        max = self.events[len(self.events)-1] + self.events[j]
+            mn = 100000000
+            for j in range(i + 1):
+                if self.events[i - j] + events[j] < mn:
+                    mn = self.events[i-j] + events[j]
 
-            events.append(max)
+            result.append(mn)
 
-        return events
+        return result
 
     def minPlusConvolve(self, events):
         result = []
@@ -84,6 +82,14 @@ class PieceLinearCurve:
             pieceLinearCurve.events = pieceLinearCurve.minPlusConvolve(self.events)
 
         return pieceLinearCurve.events
+
+    # def closeLoopSystemServiceCurve(self):
+
+def betaLinearCurve(x, R, T):
+    if x <= T:
+        return 0
+
+    return R * (x - T)
 
 def linearCurve(k, b, x):
     return k * np.float64(x) + b
@@ -139,13 +145,33 @@ for i in range(len(linearCurves)-1):
     if linearCurves[i].y0 > linearCurves[i].y1:
         linearCurves[i].y1 = linearCurves[i].y0
 
-p = PieceLinearCurve(linearCurves, 1000)
+# p = PieceLinearCurve(linearCurves, 1000)
 
-plt.scatter(np_time, np_numbers, color='green', label='Dataset', alpha=0.5)
-plt.plot(p.times, p.events, color='blue', label='Linear Regression')
-plt.plot(p.times, p.selfConvolve(500), color='orange', label='Self-Convolution')
-plt.plot(p.times, p.minPlusConvolve(p.events), color='red', label='Self-MinPlusConvolution')
-plt.plot(p.times, p.selfSubAddClosure(10), color='purple', label='Self-SubAddClosure')
+# shift to start of axis:
+# p.times = p.times - p.times[0]
+# np_time = np_time - np_time[0]
+
+# betaServiceCurve = PieceLinearCurve(times=p.times, events=np.array([betaLinearCurve(t,  0.002, 50000) for t in p.times]))
+# betaServiceCurve1 = PieceLinearCurve(times=p.times, events=np.array([betaLinearCurve(t, 0.002, 50000) for t in p.times]))
+# betaServiceCurve1.events = betaServiceCurve1.events + np.float64(5)
+
+# plt.scatter(np_time, np_numbers, color='green', label='Dataset', alpha=0.5)
+# plt.plot(p.times, p.events, color='blue', label='Linear Regression')
+# plt.plot(p.times, p.selfConvolve(500), color='orange', label='Self-Convolution')
+# plt.plot(p.times, p.minPlusConvolve(p.events), color='red', label='Self-MinPlusConvolution')
+# plt.plot(p.times, p.selfSubAddClosure(5), color='purple', label='Self-SubAddClosure')
+# plt.plot(betaServiceCurve.times, betaServiceCurve.events , color='magenta', label='Beta')
+# plt.plot(betaServiceCurve.times, betaServiceCurve.minPlusConvolve(betaServiceCurve1.selfSubAddClosure(5)), color='cyan', label='Beta-wfc')
+
+piecewiseCurve = PieceLinearCurve(times=np.linspace(0, 10, 1000), events=linearCurve(0.07, 0.1, np.linspace(0, 10, 1000)))
+servCurve = PieceLinearCurve(times=np.linspace(0, 10, 1000), events=np.array([betaLinearCurve(t,  0.2, 1) for t in np.linspace(0, 10, 1000)]))
+
+plt.plot(piecewiseCurve.times, piecewiseCurve.events, color='red', label='default linear curve')
+plt.plot(servCurve.times, servCurve.events, color='blue', label='serv curve')
+plt.plot(servCurve.times, servCurve.selfConvolve(piecewiseCurve.events), color='green', label='convolution')
+
+servCurve.events = servCurve.events[:int(len(servCurve.times) / 2)]
+plt.plot(servCurve.times, piecewiseCurve.selfConvolve(servCurve.events), color='cyan', label='convolution')
 
 plt.xlabel('t, unixtime(ms)')
 plt.ylabel('y(t)')
