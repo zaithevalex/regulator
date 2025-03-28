@@ -66,15 +66,16 @@ class PieceLinearCurve:
 
     def minPlusDeconvolution(self, events):
         result = []
-        for i in range(len(self.events)):
+        for i in range(int(len(self.events) / 2)):
             tmp = []
-            for j in range(len(self.events) - i):
-                if j == 0:
-                    tmp.append(self.events[i + j])
-                else:
+            for j in range(int(len(self.events) / 2)):
+                if self.events[i] == 0:
                     tmp.append(self.events[i + j] - events[j])
+                else:
+                    tmp.append(events[i + j] - self.events[j])
 
-            result.append(max(tmp))
+            result.append(max(tmp) - 25)
+
         return result
 
     def selfSubAddClosure(self, amountConvolutions):
@@ -94,7 +95,7 @@ def betaLinearCurve(x, R, T):
     return R * (x - T)
 
 def linearCurve(k, b, x):
-    return k * np.float64(x*x) + b
+    return k * np.float64(x) + b
 
 def testCurve1(x):
     if x < 2:
@@ -179,18 +180,19 @@ for i in range(len(linearCurves)-1):
 # plt.plot(betaServiceCurve.times, betaServiceCurve.events , color='magenta', label='Beta')
 # plt.plot(betaServiceCurve.times, betaServiceCurve.minPlusConvolve(betaServiceCurve1.selfSubAddClosure(5)), color='cyan', label='Beta-wfc')
 #
-piecewiseCurve = PieceLinearCurve(times=np.linspace(0, 20, 1000), events=linearCurve(0.5, 2, np.linspace(0, 20, 1000)))
-servCurve = PieceLinearCurve(times=np.linspace(0, 20, 1000), events=np.array([betaLinearCurve(t,  3, 4) for t in np.linspace(0, 20, 1000)]))
+piecewiseCurve = PieceLinearCurve(times=np.linspace(-20, 50, 3000), events=linearCurve(1, 50, np.linspace(-20, 50, 3000)))
+servCurve = PieceLinearCurve(times=np.linspace(-20, 50, 3000), events=np.array([betaLinearCurve(t,  3, -15) for t in np.linspace(-20, 50, 3000)]))
 
 # piecewiseCurve = PieceLinearCurve(times=np.linspace(0, 50, 1000), events=np.array([testCurve1(x) for x in np.linspace(0, 50, 1000)]))
 # servCurve = PieceLinearCurve(times=np.linspace(0, 50, 1000), events=np.array([testCurve2(x) for x in np.linspace(0, 50, 1000)]))
 plt.plot(piecewiseCurve.times, piecewiseCurve.events, color='red', label='default linear curve')
-# plt.plot(servCurve.times, servCurve.events, color='blue', label='serv curve')
-plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(1), color='green', label='convolution')
-plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(2), color='green', label='convolution')
-plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(3), color='green', label='convolution')
-plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(4), color='green', label='convolution')
-# plt.plot(piecewiseCurve.times, piecewiseCurve.minPlusDeconvolution(servCurve.events), color='cyan', label='convolution')
+plt.plot(servCurve.times, servCurve.events, color='blue', label='serv curve')
+# plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(1), color='green', label='convolution')
+# plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(2), color='green', label='convolution')
+# plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(3), color='green', label='convolution')
+# plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(4), color='green', label='convolution')
+plt.plot(servCurve.times[:int(len(servCurve.times) / 2)], servCurve.minPlusDeconvolution(piecewiseCurve.events), color='green', label='convolution')
+
 
 plt.xlabel('t, unixtime(ms)')
 plt.ylabel('y(t)')
