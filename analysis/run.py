@@ -15,94 +15,89 @@ class LinearCurve:
     def b(self):
         return self.y0 - ((self.y1 - self.y0) * self.x0) / (self.x1 - self.x0)
 
-class PieceLinearCurve:
-    def __init__(self, linearCurves=[], amountPoints=0, times=None, events=None):
-        if times is not None and events is not None:
-            self.times = times
-            self.events = events
-            return
-
+class MinPlusAlgebra:
+    def ConvertToDataSet(self, linearCurves=[], amountPoints=0):
+        times, events = [], []
         if len(linearCurves) == 0 or amountPoints == 0:
-            self.times = []
-            self.events = []
-
-            return
+            return None, None
 
         maxlength = linearCurves[0].x1 - linearCurves[0].x0
         for i in range(len(linearCurves)):
             if linearCurves[i].x1 - linearCurves[i].x0 > maxlength:
                 maxlength = linearCurves[i].x1 - linearCurves[i].x0
 
-        self.times = []
-        self.events = []
-
         start = 0
         for i in range(len(linearCurves)):
             interval = np.linspace(linearCurves[i].x0, linearCurves[i].x1, int(np.round((linearCurves[i].x1 - linearCurves[i].x0) * amountPoints / maxlength)))
             for p in range(len(interval)):
-                self.times.append(interval[p])
+                times.append(interval[p])
 
-            events = linearCurve(linearCurves[i].k(), linearCurves[i].b(), self.times[start:len(self.times)])
+            events = linearCurve(linearCurves[i].k(), linearCurves[i].b(), times[start:len(times)])
             for p in range(len(events)):
-                self.events.append(events[p])
+                events.append(events[p])
 
-            start = len(self.times)
+            start = len(times)
 
-    def minPlusConvolution(self, events):
-        result = []
+        return times, events
 
-        for i in range(len(self.events)):
+    def convolve(self, events_f, events_g):
+        events = []
+        for i in range(len(events_f)):
             tmp = []
             for j in range(i + 1):
                 if j == 0:
-                    tmp.append(self.events[i - j])
+                    tmp.append(events_f[i - j])
                 else:
-                    tmp.append(self.events[i - j] + events[j])
-                       
-            result.append(min(tmp))
+                    tmp.append(events_f[i - j] + events_g[j])
+            events.append(min(tmp))
 
-        return result
+        return times, events
 
-    def minPlusDeconvolution(self):
-        result = []
+    def MinPlusConvolution(self, f, g, times):
+        if len(times) == 0:
+            return None, None
 
-        i = self.times[0]
-        while i <= self.times[len(self.times) - 1]:
-            tmp = [0] * len(self.times)
+        events_f = np.array([f(x) for x in times])
+        events_g = np.array([g(x) for x in times])
 
-            if i <= 0:
-                j = 0
-                jCounter = 0
-                while j <= self.times[len(self.times) - 1]:
-                    tmp[jCounter] = testCurve1(i + j) - testCurve2(j)
-                    jCounter += 1
-                    j += 0.05
+        return self.convolve(events_f, events_g)
+
+    def MinPlusDeconvolution(self, f, g, times):
+        if len(times) == 0:
+            return None, None
+
+        events = []
+        left = times[0]
+        delta = (times[len(times) - 1] - left) / len(times)
+        while left <= times[len(times) - 1]:
+            tmp = [0] * len(times)
+
+            if left <= 0:
+                internal = 0.0
+                internalCounter = 0
+                while internal <= times[len(times) - 1]:
+                    tmp[internalCounter] = f(left + internal) - g(internal)
+                    internalCounter += 1
+                    internal += delta
             else:
-                j = 0
-                jCounter = 0
-                while j <= self.times[len(self.times) - 1] - i:
-                    tmp[jCounter] = testCurve1(i + j) - testCurve2(j)
-                    jCounter += 1
-                    j += 0.05
+                internal = 0.0
+                internalCounter = 0
+                while internal <= times[len(times) - 1] - left:
+                    tmp[internalCounter] = f(left + internal) - g(internal)
+                    internalCounter += 1
+                    internal += delta
 
-            result.append(max(tmp))
-            i += 0.05
+            events.append(max(tmp))
+            left += delta
 
-        for i in range(len(result)):
-            # result[i] += max(testCurve1(0), testCurve2(0))
-            result[i] -= 0
+        return np.linspace(times[0], times[len(times) - 1], len(events)), events
 
-        return result
-
-    def selfSubAddClosure(self, amountConvolutions):
-        pieceLinearCurve = PieceLinearCurve([], 0)
-        pieceLinearCurve.times = self.times
-        pieceLinearCurve.events = self.events
-
+    def SelfSubAddClosure(self, f, times, amountConvolutions):
+        events_f = np.array([f(x) for x in times])
         for _ in range(amountConvolutions):
-            pieceLinearCurve.events = pieceLinearCurve.minPlusConvolution(pieceLinearCurve.events)
+            _, events_f = self.convolve(events_f, events_f)
 
-        return pieceLinearCurve.events
+        return times, events_f
 
     def selfAddConst(self, c):
         return self.events + c
@@ -137,10 +132,7 @@ def linearCurve(k, b, x):
 #     return 15
 
 def testCurve1(x):
-    if x < 2:
-        return x
-
-    return 2 + 0.25 * (x - 2)
+    return x*x*x*x
 
 def testCurve2(x):
     if x < 3:
@@ -201,43 +193,22 @@ for i in range(len(linearCurves)-1):
     if linearCurves[i].y0 > linearCurves[i].y1:
         linearCurves[i].y1 = linearCurves[i].y0
 
-# p = PieceLinearCurve(linearCurves, 1000)
-
-# shift to start of axis:
-# p.times = p.times - p.times[0]
-# np_time = np_time - np_time[0]
-
-# betaServiceCurve = PieceLinearCurve(times=p.times, events=np.array([betaLinearCurve(t,  0.002, 50000) for t in p.times]))
-# betaServiceCurve1 = PieceLinearCurve(times=p.times, events=np.array([betaLinearCurve(t, 0.002, 50000) for t in p.times]))
-# betaServiceCurve1.events = betaServiceCurve1.events + np.float64(5)
-
-# plt.scatter(np_time, np_numbers, color='green', label='Dataset', alpha=0.5)
-# plt.plot(p.times, p.events, color='blue', label='Linear Regression')
-# plt.plot(p.times, p.selfConvolve(500), color='orange', label='Self-Convolution')
-# plt.plot(p.times, p.minPlusConvolve(p.events), color='red', label='Self-MinPlusConvolution')
-# plt.plot(p.times, p.selfSubAddClosure(5), color='purple', label='Self-SubAddClosure')
-# plt.plot(betaServiceCurve.times, betaServiceCurve.events , color='magenta', label='Beta')
-# plt.plot(betaServiceCurve.times, betaServiceCurve.minPlusConvolve(betaServiceCurve1.selfSubAddClosure(5)), color='cyan', label='Beta-wfc')
-#
-# piecewiseCurve = PieceLinearCurve(times=np.linspace(-20, 50, 1401), events=linearCurve(1, 50, np.linspace(-20, 50, 1401)))
-# servCurve = PieceLinearCurve(times=np.linspace(-20, 50, 1401), events=np.array([betaLinearCurve(3, -15, t) for t in np.linspace(-20, 50, 1401)]))
-
-piecewiseCurve = PieceLinearCurve(times=np.linspace(-20, 40, 1000), events=np.array([testCurve1(x) for x in np.linspace(-20, 40, 1000)]))
-servCurve = PieceLinearCurve(times=np.linspace(-20, 40, 1000), events=np.array([testCurve2(x) for x in np.linspace(-20, 40, 1000)]))
-plt.plot(piecewiseCurve.times, piecewiseCurve.events, color='blue', label='default linear curve')
-plt.plot(servCurve.times, servCurve.events, color='green', label='serv curve')
+# plt.plot(np.linspace(-20, 40, 1000), np.array([testCurve1(x) for x in np.linspace(-20, 40, 1000)]), color='blue', label='default linear curve')
+# plt.plot(np.linspace(-20, 40, 1000), np.array([testCurve2(x) for x in np.linspace(-20, 40, 1000)]), color='green', label='serv curve')
 # plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(1), color='green', label='convolution')
-# plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(2), color='green', label='convolution')
-# plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(3), color='green', label='convolution')
-# plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(4), color='green', label='convolution')
-# plt.plot(piecewiseCurve.times, piecewiseCurve.minPlusDeconvolution(servCurve.events), color='green', label='convolution')
-# plt.plot(piecewiseCurve.times, servCurve.minPlusDeconvolution(piecewiseCurve.events), color='cyan', label='convolution')
-plt.plot(np.linspace(-20, 40, 1200), piecewiseCurve.minPlusDeconvolution(), color='red', label='Deconvolution')
-# plt.plot(np.linspace(-20, 40, 1000), servCurve.minPlusConvolution(piecewiseCurve.events), color='orange', label='Convolution')
+
+# times, events = MinPlusAlgebra().MinPlusDeconvolution(testCurve1, testCurve2, np.linspace(-20, 50, 1401))
+# plt.plot(times, events, color='red', label='Deconvolution')
+
+# times, events = MinPlusAlgebra().MinPlusConvolution(testCurve1, testCurve2, np.linspace(0, 40, 1000))
+# plt.plot(times, events, color='orange', label='Convolution')
+
+plt.plot(np.linspace(0, 100, 1000), np.array([testCurve1(x) for x in np.linspace(0, 100, 1000)]), color='blue', label='default linear curve')
+
+test_events = np.array([testCurve1(x) for x in np.linspace(0, 100, 1000)])
+times, events = MinPlusAlgebra().SelfSubAddClosure(testCurve1, np.linspace(0, 100, 1000), 2)
+plt.plot(times, events)
 plt.xlim(0)
-
-# print(len(piecewiseCurve.minPlusDeconvolution()))
-
 
 plt.xlabel('t, unixtime(ms)')
 plt.ylabel('y(t)')
