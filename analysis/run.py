@@ -74,14 +74,14 @@ class PieceLinearCurve:
                 j = 0
                 jCounter = 0
                 while j <= self.times[len(self.times) - 1]:
-                    tmp[jCounter] = testCurve2(i + j) - testCurve1(j)
+                    tmp[jCounter] = testCurve1(i + j) - testCurve2(j)
                     jCounter += 1
                     j += 0.05
             else:
                 j = 0
                 jCounter = 0
                 while j <= self.times[len(self.times) - 1] - i:
-                    tmp[jCounter] = testCurve2(i + j) - testCurve1(j)
+                    tmp[jCounter] = testCurve1(i + j) - testCurve2(j)
                     jCounter += 1
                     j += 0.05
 
@@ -104,6 +104,9 @@ class PieceLinearCurve:
 
         return pieceLinearCurve.events
 
+    def selfAddConst(self, c):
+        return self.events + c
+
 def betaLinearCurve(R, T, x):
     if x <= T:
         return 0
@@ -113,27 +116,39 @@ def betaLinearCurve(R, T, x):
 def linearCurve(k, b, x):
     return k * np.float64(x) + b
 
-def testCurve1(x):
-    if x < 3:
-        return 0
-    elif x >= 3 and x <= 5:
-        return (x - 3)
-    elif x >= 3 and x <= 12:
-        return 2
+# def testCurve1(x):
+#     if x < 3:
+#         return 0
+#     elif x >= 3 and x <= 5:
+#         return (x - 3)
+#     elif x >= 5 and x <= 12:
+#         return 2
+#
+#     return 7 + 0.5 * (x - 12)
+#
+# def testCurve2(x):
+#     if x <= 0:
+#         return 1
+#     elif x >= 0 and x < 2:
+#         return 1 + x
+#     elif x >= 2 and x <= 20.15:
+#         return 3 + 0.25 * (x - 2)
+#
+#     return 15
 
-    return 7 + 0.3 * (x - 12)
+def testCurve1(x):
+    if x < 2:
+        return x
+
+    return 2 + 0.25 * (x - 2)
 
 def testCurve2(x):
-    if x <= 0:
-        return 1
-    elif x >= 0 and x < 3:
-        return 1 + x
-    elif x >= 3 and x <= 20:
-        return 4 + 0.3 * (x - 3)
+    if x < 3:
+        return 0
+    elif x >= 3 and x < 10:
+        return (x - 3)
 
-    return 9.1
-
-
+    return 7 + 0.5 * (x - 10)
 
 with open('./dataset/y.txt', 'r') as file:
     lines = file.readlines()
@@ -209,15 +224,16 @@ for i in range(len(linearCurves)-1):
 
 piecewiseCurve = PieceLinearCurve(times=np.linspace(-20, 40, 1000), events=np.array([testCurve1(x) for x in np.linspace(-20, 40, 1000)]))
 servCurve = PieceLinearCurve(times=np.linspace(-20, 40, 1000), events=np.array([testCurve2(x) for x in np.linspace(-20, 40, 1000)]))
-plt.plot(piecewiseCurve.times, piecewiseCurve.events, color='red', label='default linear curve')
-plt.plot(servCurve.times, servCurve.events, color='blue', label='serv curve')
+plt.plot(piecewiseCurve.times, piecewiseCurve.events, color='blue', label='default linear curve')
+plt.plot(servCurve.times, servCurve.events, color='green', label='serv curve')
 # plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(1), color='green', label='convolution')
 # plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(2), color='green', label='convolution')
 # plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(3), color='green', label='convolution')
 # plt.plot(servCurve.times, piecewiseCurve.selfSubAddClosure(4), color='green', label='convolution')
 # plt.plot(piecewiseCurve.times, piecewiseCurve.minPlusDeconvolution(servCurve.events), color='green', label='convolution')
 # plt.plot(piecewiseCurve.times, servCurve.minPlusDeconvolution(piecewiseCurve.events), color='cyan', label='convolution')
-plt.plot(np.linspace(-20, 40, 1200), piecewiseCurve.minPlusDeconvolution(), color='cyan', label='Deconvolution')
+plt.plot(np.linspace(-20, 40, 1200), piecewiseCurve.minPlusDeconvolution(), color='red', label='Deconvolution')
+# plt.plot(np.linspace(-20, 40, 1000), servCurve.minPlusConvolution(piecewiseCurve.events), color='orange', label='Convolution')
 plt.xlim(0)
 
 # print(len(piecewiseCurve.minPlusDeconvolution()))
