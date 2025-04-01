@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import interp1d
 from sklearn.linear_model import LinearRegression
+import pandas as pd
+import scipy.integrate as spi
 
 class LinearCurve:
     def __init__(self, start_t, end_t, start_n):
@@ -16,7 +19,18 @@ class LinearCurve:
         return self.y0 - ((self.y1 - self.y0) * self.x0) / (self.x1 - self.x0)
 
 class MinPlusAlgebra:
-    def ConvertToDataSet(self, linearCurves=[], amountPoints=0):
+    def AddConst1(self, f, times, const):
+        f_events = np.array([(f(x) + const) for x in times])
+        return np.linspace(times[0], times[len(times) - 1], len(f_events)), f_events
+
+    def AddConst2(self, events, times, const):
+        for i in range(len(events)):
+            events[i] += const
+
+        return np.linspace(times[0], times[len(times) - 1], len(events)), events
+
+
+    def ConvertPiecewiseLinearCurveToDataSet(self, linearCurves=[], amountPoints=0):
         times, events = [], []
         if len(linearCurves) == 0 or amountPoints == 0:
             return None, None
@@ -40,18 +54,29 @@ class MinPlusAlgebra:
 
         return times, events
 
-    def convolve(self, events_f, events_g):
-        events = []
-        for i in range(len(events_f)):
-            tmp = []
-            for j in range(i + 1):
-                if j == 0:
-                    tmp.append(events_f[i - j])
-                else:
-                    tmp.append(events_f[i - j] + events_g[j])
-            events.append(min(tmp))
+    def ConvertDataSetToFunction(self, times, events):
+        x_df = {'x' : times}
+        f_events_df = {'f' : events}
 
-        return times, events
+        return interp1d(pd.DataFrame(x_df)['x'], pd.DataFrame(f_events_df)['f'], fill_value='extrapolate')
+
+    def L1Norm(self, f, g, times):
+        return spi.simpson(np.abs(f(times) - g(times)), times)
+
+    def MinimizeL1Norm(self, f, g, times, bottom, top, delta):
+        Wmin, mn = float("+inf"), float("+inf")
+        while bottom <= top:
+            t, e = MinPlusAlgebra().AddConst1(f, times, bottom)
+            norm = MinPlusAlgebra().L1Norm(g, MinPlusAlgebra().ConvertDataSetToFunction(t, e), t)
+
+            print(norm)
+            if norm < mn:
+                mn = norm
+                Wmin = bottom
+
+            bottom += delta
+
+        return Wmin
 
     def MinPlusConvolution1(self, f, g, times):
         if len(times) == 0:
@@ -68,15 +93,54 @@ class MinPlusAlgebra:
 
         return self.convolve(events_f, events_g)
 
-    def MinPlusDeconvolution(self, f, g, times):
+    def MinPlusDeconvolution1(self, f, g, times):
         if len(times) == 0:
             return None, None
 
+        return self.deconvolve(f, g, times)
+
+    def MinPlusDeconvolution2(self, f_events, g_events, times):
+        x_df = {'x' : times}
+        f_events_df = {'f' : f_events}
+        g_events_df = {'g' : g_events}
+
+        f_interpolation = interp1d(pd.DataFrame(x_df)['x'], pd.DataFrame(f_events_df)['f'], fill_value='extrapolate')
+        g_interpolation = interp1d(pd.DataFrame(x_df)['x'], pd.DataFrame(g_events_df)['g'], fill_value='extrapolate')
+        return self.deconvolve(f_interpolation, g_interpolation, times)
+
+
+    def SelfSubAddClosure1(self, f, times, amountConvolutions):
+        events_f = np.array([f(x) for x in times])
+        for _ in range(amountConvolutions):
+            _, events_f = self.convolve(events_f, events_f)
+
+        return np.linspace(times[0], times[len(times) - 1], len(events_f)), events_f
+
+    def SelfSubAddClosure2(self, events, times, amountConvolutions):
+        for _ in range(amountConvolutions):
+            _, events = self.convolve(events, events)
+
+        return np.linspace(times[0], times[len(times) - 1], len(events)), events
+
+    def convolve(self, events_f, events_g):
+        events = []
+        for i in range(len(events_f)):
+            tmp = []
+            for j in range(i + 1):
+                if j == 0:
+                    tmp.append(events_f[i - j])
+                else:
+                    tmp.append(events_f[i - j] + events_g[j])
+            events.append(min(tmp))
+
+        return times, events
+
+    def deconvolve(self, f, g, times):
         events = []
         left = times[0]
         delta = (times[len(times) - 1] - left) / len(times)
         while left <= times[len(times) - 1]:
-            tmp = [0] * len(times)
+            tmp = [0] * (len(times) + 1)
 
             if left <= 0:
                 internal = 0.0
@@ -98,29 +162,6 @@ class MinPlusAlgebra:
 
         return np.linspace(times[0], times[len(times) - 1], len(events)), events
 
-    def SelfSubAddClosure1(self, f, times, amountConvolutions):
-        events_f = np.array([f(x) for x in times])
-        for _ in range(amountConvolutions):
-            _, events_f = self.convolve(events_f, events_f)
-
-        return np.linspace(times[0], times[len(times) - 1], len(events_f)), events_f
-
-    def SelfSubAddClosure2(self, events, times, amountConvolutions):
-        for _ in range(amountConvolutions):
-            _, events = self.convolve(events, events)
-
-        return np.linspace(times[0], times[len(times) - 1], len(events)), events
-
-    def AddConst1(self, f, times, const):
-        f_events = np.array([(f(x) + const) for x in times])
-        return np.linspace(times[0], times[len(times) - 1], len(f_events)), f_events
-
-    def AddConst2(self, events, times, const):
-        for i in range(len(events)):
-            events[i] += const
-
-        return np.linspace(times[0], times[len(times) - 1], len(events)), events
-
 def betaLinearCurve(R, T, x):
     if x <= T:
         return 0
@@ -130,36 +171,25 @@ def betaLinearCurve(R, T, x):
 def linearCurve(k, b, x):
     return k * np.float64(x) + b
 
-# def testCurve1(x):
-#     if x < 3:
-#         return 0
-#     elif x >= 3 and x <= 5:
-#         return (x - 3)
-#     elif x >= 5 and x <= 12:
-#         return 2
-#
-#     return 7 + 0.5 * (x - 12)
-#
-# def testCurve2(x):
-#     if x <= 0:
-#         return 1
-#     elif x >= 0 and x < 2:
-#         return 1 + x
-#     elif x >= 2 and x <= 20.15:
-#         return 3 + 0.25 * (x - 2)
-#
-#     return 15
-#
-# def testCurve1(x):
-#     return x*x*x*x
-#
-# def testCurve2(x):
-#     if x < 3:
-#         return 0
-#     elif x >= 3 and x < 10:
-#         return (x - 3)
-#
-#     return 7 + 0.5 * (x - 10)
+def testCurve1(x):
+    if x < 3:
+        return 0
+    elif x >= 3 and x <= 5:
+        return (x - 3)
+    elif x >= 5 and x <= 12:
+        return 2
+
+    return 7 + 0.5 * (x - 12)
+
+def testCurve2(x):
+    if x <= 0:
+        return 1
+    elif x >= 0 and x < 2:
+        return 1 + x
+    elif x >= 2 and x <= 20.15:
+        return 3 + 0.25 * (x - 2)
+
+    return 15
 
 def alpha_in(x):
     return 2 * x + 3
@@ -168,9 +198,9 @@ def alpha_out(x):
     return x + 20
 
 def beta(x):
-    if x < 2:
+    if x < 14:
         return 0
-    return 3 * (x - 2)
+    return 3 * (x - 14)
 
 with open('./dataset/y.txt', 'r') as file:
     lines = file.readlines()
@@ -244,18 +274,36 @@ alpha_in_events = np.array([alpha_in(x) for x in times])
 alpha_out_events = np.array([alpha_out(x) for x in times])
 beta_events = np.array([beta(x) for x in times])
 
-plt.plot(times, alpha_in_events, color='red', label='alpha_in')
+# plt.plot(times, alpha_in_events, color='red', label='alpha_in')
 plt.plot(times, alpha_out_events, color='blue', label='alpha_out')
-plt.plot(times, beta_events, color='green', label='beta')
+# plt.plot(times, beta_events, color='green', label='beta')
 
 times, events1 = MinPlusAlgebra().AddConst1(beta, times, 10)
-plt.plot(times, events1, color='cyan', label='beta + 10')
+# plt.plot(times, events1, color='cyan', label='beta + 10')
 
 times, events2 = MinPlusAlgebra().SelfSubAddClosure2(events1, times, 2)
 # plt.plot(times, events2, color='black', label='sub-add closure')
 
 times, events3 = MinPlusAlgebra().MinPlusConvolution2(events1, events2, times)
 plt.plot(times, events3, color='orange', label='beta wfc')
+
+times, events4 = MinPlusAlgebra().MinPlusDeconvolution2(np.array(alpha_in_events), events3, times)
+plt.plot(times, events4, color='black', label='deconvolution(alpha, beta)')
+
+# times = np.linspace(0, 100, 1000)
+# plt.plot(times, np.array([testCurve1(x) for x in times]), color='blue')
+# plt.plot(times, np.array([testCurve2(x) for x in times]), color='green')
+#
+# eventsCurve1 = np.array([testCurve1(x) for x in times])
+# eventsCurve2 = np.array([testCurve2(x) for x in times])
+#
+# times, events = MinPlusAlgebra().MinPlusDeconvolution2(eventsCurve2, eventsCurve1, times)
+# plt.plot(times, events, color='red')
+
+f = MinPlusAlgebra().ConvertDataSetToFunction(times, events4)
+
+Wmin = MinPlusAlgebra().MinimizeL1Norm(beta, alpha_out, np.linspace(0, 100, 100), 0.0, 10.0, 0.1)
+print("Wmin:", Wmin)
 
 plt.xlim(0)
 plt.xlabel('t, unixtime(ms)')
