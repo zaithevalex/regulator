@@ -53,12 +53,18 @@ class MinPlusAlgebra:
 
         return times, events
 
-    def MinPlusConvolution(self, f, g, times):
+    def MinPlusConvolution1(self, f, g, times):
         if len(times) == 0:
             return None, None
 
         events_f = np.array([f(x) for x in times])
         events_g = np.array([g(x) for x in times])
+
+        return self.convolve(events_f, events_g)
+
+    def MinPlusConvolution2(self, events_f, events_g, times):
+        if len(times) == 0:
+            return None, None
 
         return self.convolve(events_f, events_g)
 
@@ -92,15 +98,28 @@ class MinPlusAlgebra:
 
         return np.linspace(times[0], times[len(times) - 1], len(events)), events
 
-    def SelfSubAddClosure(self, f, times, amountConvolutions):
+    def SelfSubAddClosure1(self, f, times, amountConvolutions):
         events_f = np.array([f(x) for x in times])
         for _ in range(amountConvolutions):
             _, events_f = self.convolve(events_f, events_f)
 
-        return times, events_f
+        return np.linspace(times[0], times[len(times) - 1], len(events_f)), events_f
 
-    def selfAddConst(self, c):
-        return self.events + c
+    def SelfSubAddClosure2(self, events, times, amountConvolutions):
+        for _ in range(amountConvolutions):
+            _, events = self.convolve(events, events)
+
+        return np.linspace(times[0], times[len(times) - 1], len(events)), events
+
+    def AddConst1(self, f, times, const):
+        f_events = np.array([(f(x) + const) for x in times])
+        return np.linspace(times[0], times[len(times) - 1], len(f_events)), f_events
+
+    def AddConst2(self, events, times, const):
+        for i in range(len(events)):
+            events[i] += const
+
+        return np.linspace(times[0], times[len(times) - 1], len(events)), events
 
 def betaLinearCurve(R, T, x):
     if x <= T:
@@ -130,17 +149,28 @@ def linearCurve(k, b, x):
 #         return 3 + 0.25 * (x - 2)
 #
 #     return 15
+#
+# def testCurve1(x):
+#     return x*x*x*x
+#
+# def testCurve2(x):
+#     if x < 3:
+#         return 0
+#     elif x >= 3 and x < 10:
+#         return (x - 3)
+#
+#     return 7 + 0.5 * (x - 10)
 
-def testCurve1(x):
-    return x*x*x*x
+def alpha_in(x):
+    return 2 * x + 3
 
-def testCurve2(x):
-    if x < 3:
+def alpha_out(x):
+    return x + 20
+
+def beta(x):
+    if x < 2:
         return 0
-    elif x >= 3 and x < 10:
-        return (x - 3)
-
-    return 7 + 0.5 * (x - 10)
+    return 3 * (x - 2)
 
 with open('./dataset/y.txt', 'r') as file:
     lines = file.readlines()
@@ -203,13 +233,31 @@ for i in range(len(linearCurves)-1):
 # times, events = MinPlusAlgebra().MinPlusConvolution(testCurve1, testCurve2, np.linspace(0, 40, 1000))
 # plt.plot(times, events, color='orange', label='Convolution')
 
-plt.plot(np.linspace(0, 100, 1000), np.array([testCurve1(x) for x in np.linspace(0, 100, 1000)]), color='blue', label='default linear curve')
+# plt.plot(np.linspace(0, 100, 1000), np.array([testCurve1(x) for x in np.linspace(0, 100, 1000)]), color='blue', label='default linear curve')
 
-test_events = np.array([testCurve1(x) for x in np.linspace(0, 100, 1000)])
-times, events = MinPlusAlgebra().SelfSubAddClosure(testCurve1, np.linspace(0, 100, 1000), 2)
-plt.plot(times, events)
+# test_events = np.array([testCurve1(x) for x in np.linspace(0, 100, 1000)])
+# times, events = MinPlusAlgebra().SelfSubAddClosure(testCurve1, np.linspace(0, 100, 1000), 2)
+# plt.plot(times, events)
+
+times = np.linspace(0, 100, 100)
+alpha_in_events = np.array([alpha_in(x) for x in times])
+alpha_out_events = np.array([alpha_out(x) for x in times])
+beta_events = np.array([beta(x) for x in times])
+
+plt.plot(times, alpha_in_events, color='red', label='alpha_in')
+plt.plot(times, alpha_out_events, color='blue', label='alpha_out')
+plt.plot(times, beta_events, color='green', label='beta')
+
+times, events1 = MinPlusAlgebra().AddConst1(beta, times, 10)
+plt.plot(times, events1, color='cyan', label='beta + 10')
+
+times, events2 = MinPlusAlgebra().SelfSubAddClosure2(events1, times, 2)
+# plt.plot(times, events2, color='black', label='sub-add closure')
+
+times, events3 = MinPlusAlgebra().MinPlusConvolution2(events1, events2, times)
+plt.plot(times, events3, color='orange', label='beta wfc')
+
 plt.xlim(0)
-
 plt.xlabel('t, unixtime(ms)')
 plt.ylabel('y(t)')
 plt.legend()
