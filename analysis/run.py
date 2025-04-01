@@ -191,10 +191,10 @@ def testCurve2(x):
     return 15
 
 def alpha_in(x):
-    return 2 * x + 3
+    return 2 * x + 0
 
 def alpha_out(x):
-    return 2.5 * x + 20
+    return 2.5 * x + 0
 
 def beta(x):
     if x < 10:
@@ -277,17 +277,18 @@ beta_events = np.array([beta(x) for x in times])
 plt.plot(times, alpha_out_events, color='blue', label='alpha_out')
 # plt.plot(times, beta_events, color='green', label='beta')
 
-times, events1 = MinPlusAlgebra().AddConst1(beta, times, 10)
+times, events1 = MinPlusAlgebra().AddConst1(beta, times, 30)
 # plt.plot(times, events1, color='cyan', label='beta + 10')
 
 times, events2 = MinPlusAlgebra().SelfSubAddClosure2(events1, times, 2)
-# plt.plot(times, events2, color='black', label='sub-add closure')
+plt.plot(times, events2, color='cyan', label='sub-add closure')
 
-times, events3 = MinPlusAlgebra().MinPlusConvolution2(events1, events2, times)
+times, events3 = MinPlusAlgebra().MinPlusConvolution2(beta_events, events2, times)
 plt.plot(times, events3, color='orange', label='beta wfc')
 
 times, events4 = MinPlusAlgebra().MinPlusDeconvolution2(np.array(alpha_in_events), events3, times)
 plt.plot(times, events4, color='black', label='deconvolution(alpha, beta)')
+
 
 # times = np.linspace(0, 100, 1000)
 # plt.plot(times, np.array([testCurve1(x) for x in times]), color='blue')
