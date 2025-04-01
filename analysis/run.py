@@ -69,7 +69,6 @@ class MinPlusAlgebra:
             t, e = MinPlusAlgebra().AddConst1(f, times, bottom)
             norm = MinPlusAlgebra().L1Norm(g, MinPlusAlgebra().ConvertDataSetToFunction(t, e), t)
 
-            print(norm)
             if norm < mn:
                 mn = norm
                 Wmin = bottom
@@ -195,12 +194,12 @@ def alpha_in(x):
     return 2 * x + 3
 
 def alpha_out(x):
-    return x + 20
+    return 2.5 * x + 20
 
 def beta(x):
-    if x < 14:
+    if x < 10:
         return 0
-    return 3 * (x - 14)
+    return 3 * (x - 10)
 
 with open('./dataset/y.txt', 'r') as file:
     lines = file.readlines()
@@ -302,7 +301,7 @@ plt.plot(times, events4, color='black', label='deconvolution(alpha, beta)')
 
 f = MinPlusAlgebra().ConvertDataSetToFunction(times, events4)
 
-Wmin = MinPlusAlgebra().MinimizeL1Norm(beta, alpha_out, np.linspace(0, 100, 100), 0.0, 10.0, 0.1)
+Wmin = MinPlusAlgebra().MinimizeL1Norm(beta, alpha_out, np.linspace(0, 100, 1000), 0.0, 30.0, 0.1)
 print("Wmin:", Wmin)
 
 plt.xlim(0)
